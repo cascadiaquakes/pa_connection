@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graph Dashboard</title>
+</head>
+<body>
+<div id="app">
+    <aside class="sidebar">
+        <h2>Graph controls</h2>
+
+        <section class="panel">
+            <h3>Coloring</h3>
+
+            <label class="row">
+                <span>Nodes</span>
+                <select id="nodeColorMode">
+                    <option value="none">None</option>
+                    <option value="orgCat">Organization Category</option>
+                    <option value="geo">Geographic Area</option>
+                </select>
+            </label>
+
+            <label class="row">
+                <span>Edges</span>
+                <select id="edgeColorMode">
+                    <option value="none">None</option>
+                    <option value="relType">Relationship type</option>
+                </select>
+            </label>
+        </section>
+
+        <!-- Node Filters -->
+        <section class="panel">
+            <h3>Node filters</h3>
+
+            <div class="hint">Organization Category</div>
+            <div id="orgCategoryFilters" class="checklist"></div>
+
+            <div class="hint" style="margin-top: 10px;">Geographic Area</div>
+            <div id="geoFilters" class="checklist"></div>
+        </section>
+
+        <!-- Edge Filters -->
+        <section class="panel">
+            <h3>Edge filters</h3>
+
+            <div class="hint">Relationship type</div>
+            <div id="relTypeFilters" class="checklist"></div>
+        </section>
+
+        <section class="panel">
+            <h3>Layout</h3>
+            <div class="row">
+                <button id="btnFit">Fit</button>
+                <button id="btnCose">COSE</button>
+            </div>
+            <div class="hint">
+                (Later: your categorical X/Y grid layout goes here.)
+            </div>
+        </section>
+
+        <section class="panel">
+            <h3>Selection</h3>
+            <pre id="selectionBox" class="selectionBox">(click a node/edge)</pre>
+        </section>
+    </aside>
+
+    <main class="main">
+        <div id="cy" class="cy"></div>
+    </main>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

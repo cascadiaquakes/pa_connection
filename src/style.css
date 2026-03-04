@@ -1,0 +1,79 @@
+:root {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: #111;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+#app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+}
+
+.sidebar {
+    border-right: 1px solid #e6e6e6;
+    padding: 14px 12px;
+    overflow: auto;
+}
+
+.main {
+    position: relative;
+}
+
+.cy {
+    position: absolute;
+    inset: 0;
+}
+
+.panel {
+    border: 1px solid #ededed;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px 0;
+    background: #fafafa;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 6px 0;
+}
+
+select, button {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: white;
+}
+
+button {
+    cursor: pointer;
+}
+
+.checklist label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.hint {
+    font-size: 12px;
+    color: #555;
+}
+
+.selectionBox {
+    margin: 0;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #e1e1e1;
+    background: white;
+    font-size: 12px;
+    white-space: pre-wrap;
+}

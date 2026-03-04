@@ -1,0 +1,19 @@
+{
+  "name": "pa_connection",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "cytoscape": "^3.33.1",
+    "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5"
+  }
+}
