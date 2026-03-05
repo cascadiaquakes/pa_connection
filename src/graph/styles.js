@@ -1,7 +1,7 @@
 export function baseStylesheet() {
     return [
         {
-            selector: "node",
+            selector: "node[label]",
             style: {
                 "background-color": "#888",
                 label: "data(label)",

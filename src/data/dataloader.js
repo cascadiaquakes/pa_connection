@@ -1,92 +1,142 @@
-import * as XLSX from "xlsx";
 import { dbg } from "../debug/logger.js";
 
 const L = dbg("dataloader");
 
-async function fetchArrayBuffer(url) {
+// -------- fetch helpers --------
+async function fetchText(url) {
     const r = await fetch(url, { cache: "no-store" });
     const ct = (r.headers.get("content-type") || "").toLowerCase();
 
-    console.log("[dataloader] HTTP:", r.status, r.statusText, "CT:", ct);
+    L.log("[fetchText] HTTP:", r.status, r.statusText, "CT:", ct);
 
-    // If it smells like HTML, read as text and show a preview
+    // If it smells like HTML, read a preview and throw.
     if (ct.includes("text/html")) {
         const html = await r.text();
-        console.error("[dataloader] Got HTML instead of XLSX. First 300 chars:\n", html.slice(0, 300));
+        L.err("[fetchText] Got HTML instead of CSV. First 300 chars:\n", html.slice(0, 300));
         throw new Error(
-            `Expected XLSX but got HTML from ${url}. This usually means the file path is wrong or rewritten to index.html.`
+            `Expected CSV but got HTML from ${url}. This usually means the file path is wrong or rewritten to index.html.`
         );
     }
 
     if (!r.ok) throw new Error(`Failed to fetch ${url}: ${r.status} ${r.statusText}`);
-
-    const buf = await r.arrayBuffer();
-    console.log("[dataloader] bytes:", buf.byteLength);
-    return buf;
+    return await r.text();
 }
 
-function sheetToRows(workbook, sheetName) {
-    L.group(`sheetToRows("${sheetName}")`);
+// -------- CSV parsing (RFC4180-ish, quote-safe) --------
+// Handles: commas inside quotes, newlines inside quotes, "" escaping.
+function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let field = "";
+    let i = 0;
+    let inQuotes = false;
 
-    const names = workbook.SheetNames || [];
-    L.log("Workbook sheet names:", names);
+    // Normalize newlines to \n
+    text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-    const ws = workbook.Sheets[sheetName];
-    if (!ws) {
-        L.err(`Sheet "${sheetName}" not found.`);
-        L.log("Available:", names);
-        L.groupEnd();
-        throw new Error(`Sheet "${sheetName}" not found. Available: ${names.join(", ")}`);
+    while (i < text.length) {
+        const ch = text[i];
+
+        if (inQuotes) {
+            if (ch === '"') {
+                const next = text[i + 1];
+                if (next === '"') {
+                    field += '"'; // escaped quote
+                    i += 2;
+                    continue;
+                } else {
+                    inQuotes = false;
+                    i += 1;
+                    continue;
+                }
+            } else {
+                field += ch;
+                i += 1;
+                continue;
+            }
+        } else {
+            if (ch === '"') {
+                inQuotes = true;
+                i += 1;
+                continue;
+            }
+            if (ch === ",") {
+                row.push(field);
+                field = "";
+                i += 1;
+                continue;
+            }
+            if (ch === "\n") {
+                row.push(field);
+                field = "";
+                // Avoid pushing a final totally-empty row from trailing newline
+                if (!(row.length === 1 && row[0] === "" && rows.length > 0)) rows.push(row);
+                row = [];
+                i += 1;
+                continue;
+            }
+            field += ch;
+            i += 1;
+        }
     }
 
-    const range = ws["!ref"];
-    L.log("Sheet range (!ref):", range);
+    // flush last field/row
+    row.push(field);
+    if (!(row.length === 1 && row[0] === "" && rows.length > 0)) rows.push(row);
 
-    // dump first few header cells for sanity
-    const headerPreview = [];
-    for (let c = 0; c < 10; c++) {
-        const addr = XLSX.utils.encode_cell({ r: 0, c });
-        headerPreview.push([addr, ws[addr]?.v ?? null]);
+    if (rows.length === 0) return [];
+
+    const headers = rows[0].map((h) => (h ?? "").trim());
+    const out = [];
+
+    for (let r = 1; r < rows.length; r++) {
+        const vals = rows[r];
+        if (vals.every((v) => (v ?? "").trim() === "")) continue; // skip blank lines
+        const obj = {};
+        for (let c = 0; c < headers.length; c++) {
+            const key = headers[c] || `col_${c}`;
+            obj[key] = (vals[c] ?? "").trim();
+        }
+        out.push(obj);
     }
-    L.log("Header row preview (row 1):", headerPreview);
 
-    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-    L.log("Row count:", rows.length);
-    if (rows.length) {
-        L.log("First row keys:", Object.keys(rows[0]));
-        L.log("First row sample:", rows[0]);
-    } else {
-        L.warn("Sheet parsed to zero rows.");
-    }
-
-    L.groupEnd();
-    return rows;
+    return out;
 }
 
-export async function loadWorkbookRows({
-                                           url = "/data.xlsx",
-                                           nodesSheet = "in",
-                                           edgesSheet = "Relationship",
-                                       } = {}) {
-    L.group("loadWorkbookRows");
-    L.log("Params:", { url, nodesSheet, edgesSheet });
-
-    const buf = await fetchArrayBuffer(url);
-
-    let wb;
+function parseMaybeJSONArray(s) {
+    if (!s) return [];
     try {
-        wb = XLSX.read(buf, { type: "array" });
-    } catch (e) {
-        L.err("XLSX.read failed:", e);
-        L.groupEnd();
-        throw e;
+        const v = JSON.parse(s);
+        return Array.isArray(v) ? v : [];
+    } catch {
+        return [];
+    }
+}
+
+// -------- public API --------
+export async function loadCsvRows({
+                                      nodesUrl = "/data/organizations_clean.csv",
+                                      edgesUrl = "/data/edges_clean.csv",
+                                  } = {}) {
+    L.group("loadCsvRows");
+    L.log("Params:", { nodesUrl, edgesUrl });
+
+    const [nodesText, edgesText] = await Promise.all([fetchText(nodesUrl), fetchText(edgesUrl)]);
+
+    const nodeRows = parseCSV(nodesText);
+    const edgeRows = parseCSV(edgesText);
+
+    L.log("nodeRows:", nodeRows.length, nodeRows[0] ? Object.keys(nodeRows[0]) : "(none)");
+    L.log("edgeRows:", edgeRows.length, edgeRows[0] ? Object.keys(edgeRows[0]) : "(none)");
+
+    // Convenience: decode orgTypes_json -> orgTypes array
+    // (Keeps orgTypePrimary for layout/styling; orgTypes for filtering)
+    for (const n of nodeRows) {
+        if ("orgTypes_json" in n && !("orgTypes" in n)) {
+            n.orgTypes = parseMaybeJSONArray(n.orgTypes_json);
+        }
     }
 
-    L.log("Parsed workbook. SheetNames:", wb.SheetNames);
-
-    const nodeRows = sheetToRows(wb, nodesSheet);
-    const edgeRows = sheetToRows(wb, edgesSheet);
-
     L.groupEnd();
-    return { nodeRows, edgeRows, sheetNames: wb.SheetNames };
+    return { nodeRows, edgeRows };
 }

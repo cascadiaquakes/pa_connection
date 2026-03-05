@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { loadWorkbookRows } from "./data/dataloader.js";
+import { loadCsvRows } from "./data/dataloader.js";
 import { buildElementsFromRows } from "./data/transforms.js";
 import {
     createGraph,
@@ -9,6 +9,9 @@ import {
     recomputeVisibility,
 } from "./graph/graphBuilder.js";
 import { initControls } from "./ui/controls.js";
+import {applyBoxPresetLayout} from "./graph/boxLayout.js";
+import { addGridDecorations } from "./graph/gridDecorations.js";
+
 
 function showFatal(err) {
     console.error(err);
@@ -21,15 +24,15 @@ function showFatal(err) {
 
 (async function main() {
     try {
-        const url = `${import.meta.env.BASE_URL}data/datav2.xlsx`;
+        const base = import.meta.env.BASE_URL || "/";
 
-        const loaded = await loadWorkbookRows({
-            url,
-            nodesSheet: "in",
-            edgesSheet: "Relationships",
-        });
+        // Files live in: public/data/*.csv  => served as: <BASE_URL>/data/*.csv
+        const nodesUrl = `${base}data/organizations_clean.csv`;
+        const edgesUrl = `${base}data/edges_clean.csv`;
 
-        console.log("[main] loadWorkbookRows returned:", loaded);
+        const loaded = await loadCsvRows({ nodesUrl, edgesUrl });
+
+        console.log("[main] loadCsvRows returned:", loaded);
 
         const nodeRows = loaded?.nodeRows ?? [];
         const edgeRows = loaded?.edgeRows ?? [];
@@ -45,16 +48,14 @@ function showFatal(err) {
             elements: { nodes, edges },
         });
 
+        addGridDecorations(cy);
+        applyBoxPresetLayout(cy);
+
         initControls(cy, {
-            onChange: ({
-                           nodeColorMode,
-                           edgeColorMode,
-                           allowedOrgCategories,
-                           allowedGeos,
-                           allowedRelTypes,
-                       }) => {
+            onChange: ({ nodeColorMode, edgeColorMode, allowedOrgCategories, allowedGeos, allowedRelTypes, prune }) => {
                 applyColorModes(cy, { nodeColorMode, edgeColorMode });
-                recomputeVisibility(cy, { allowedOrgCategories, allowedGeos, allowedRelTypes });
+                recomputeVisibility(cy, { allowedOrgCategories, allowedGeos, allowedRelTypes, prune });
+                runLayout(cy, "boxes");
             },
             onFit: () => cy.fit(undefined, 30),
             onLayout: (name) => runLayout(cy, name),

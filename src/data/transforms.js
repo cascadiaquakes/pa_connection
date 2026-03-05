@@ -1,4 +1,4 @@
-import { slugify, paletteColor } from "./normalize.js"; // slugify no longer used for id, but ok to keep
+import { slugify, paletteColor } from "./normalize.js";
 import { dbg } from "../debug/logger.js";
 
 const T = dbg("transforms");
@@ -7,59 +7,92 @@ function clean(s) {
     return String(s ?? "").trim();
 }
 
+function cleanId(s) {
+    // match your python rule: remove internal whitespace
+    return clean(s).replace(/\s+/g, "");
+}
+
+function parseOrgTypes(r) {
+    // loader may already have set r.orgTypes = [...]
+    if (Array.isArray(r.orgTypes)) return r.orgTypes;
+
+    const s = clean(r["orgTypes_json"] ?? r["orgTypes"]);
+    if (!s) return [];
+    try {
+        const v = JSON.parse(s);
+        return Array.isArray(v) ? v : [];
+    } catch {
+        // tolerate legacy formats like "A;B" or "['A','B']" if they sneak in
+        if (s.includes(";")) return s.split(";").map((x) => x.trim()).filter(Boolean);
+        return [];
+    }
+}
+
 export function buildElementsFromRows(nodeRows, edgeRows) {
     T.group("buildElementsFromRows");
     T.log("nodeRows:", nodeRows?.length, "edgeRows:", edgeRows?.length);
 
-    // ---- nodes: strict ID from "Acronym (Org ID)" ----
+    // ---- nodes ----
     const seen = new Set();
     const skippedNodes = [];
     const duplicateNodes = [];
-
     const nodes = [];
-    for (let i = 0; i < nodeRows.length; i++) {
+
+    for (let i = 0; i < (nodeRows?.length ?? 0); i++) {
         const r = nodeRows[i];
 
-        const id = clean(r["Org ID"]);
+        const id = cleanId(r["Org ID"]);
         if (!id) {
-            skippedNodes.push({ rowIndex: i, reason: "missing Acronym (Org ID)", row: r });
+            skippedNodes.push({ rowIndex: i, reason: "missing Org ID", row: r });
             continue;
         }
         if (seen.has(id)) {
             duplicateNodes.push({ rowIndex: i, id, row: r });
-            // keep the FIRST occurrence; skip the duplicates
-            continue;
+            continue; // keep first
         }
         seen.add(id);
 
         const orgName = clean(r["Organization Name"]);
-        const orgType = clean(r["organization type"]);
-        const geo = clean(r["Geographic Area"]);
+        const orgTypePrimary = clean(r["orgTypePrimary"]);
+        const geoPrimary = clean(r["geoPrimary"]);
+        const orgTypes = parseOrgTypes(r);
 
         nodes.push({
             data: {
                 id,
-                label: id, // you can swap to orgName later; keeping id is consistent + compact
+                // label choice: keep id compact, but you can switch later
+                label: id,
                 orgName,
-                nest: clean(r["Nest"]),
-                orgCategory: orgType,
-                geo,
-                _nodeColor: paletteColor(orgType || geo || "unknown"),
+
+                // for layout/styling
+                orgTypePrimary,
+                geoPrimary,
+
+                // for filtering (multi-category)
+                orgTypes,
+
+                // carry-through metadata
+                notes: clean(r["Notes"]),
+                primary: clean(r["Primary"]),
+                secondary: clean(r["2ndry"]),
+
+                _nodeColor: paletteColor(orgTypePrimary || geoPrimary || "unknown"),
             },
         });
     }
 
     const idSet = new Set(nodes.map((n) => n.data.id));
 
-    // ---- edges: only keep edges whose endpoints exist ----
+    // ---- edges ----
     const skippedEdges = [];
     const edges = [];
 
-    for (let i = 0; i < edgeRows.length; i++) {
+    for (let i = 0; i < (edgeRows?.length ?? 0); i++) {
         const r = edgeRows[i];
 
-        const source = clean(r["From agency"]);
-        const target = clean(r["To agency"]);
+        const source = cleanId(r["From agency"]);
+        const target = cleanId(r["To agency"]);
+
         if (!source || !target) {
             skippedEdges.push({ rowIndex: i, reason: "missing source/target", row: r });
             continue;
@@ -68,6 +101,7 @@ export function buildElementsFromRows(nodeRows, edgeRows) {
         const srcOk = idSet.has(source);
         const tgtOk = idSet.has(target);
 
+        // per your policy: do not guess/fix; just skip + report
         if (!srcOk || !tgtOk) {
             skippedEdges.push({
                 rowIndex: i,
@@ -87,14 +121,14 @@ export function buildElementsFromRows(nodeRows, edgeRows) {
 
         edges.push({
             data: {
-                id: `${source}__${target}__${slugify(relType)}__${edges.length}`,
+                // stable-ish, but allow duplicates via suffix
+                id: `${source}__${target}__${slugify(relType || "rel")}__${edges.length}`,
                 source,
                 target,
                 relType,
                 status,
                 description,
                 _edgeColor: paletteColor(relType || status || "unknown"),
-                _missingEndpoint: false,
             },
         });
     }
@@ -105,7 +139,6 @@ export function buildElementsFromRows(nodeRows, edgeRows) {
         skippedNodesCount: skippedNodes.length,
         duplicateNodesCount: duplicateNodes.length,
         skippedEdgesCount: skippedEdges.length,
-        // keep a small sample so console isn't spammed
         skippedNodesSample: skippedNodes.slice(0, 5),
         duplicateNodesSample: duplicateNodes.slice(0, 5),
         skippedEdgesSample: skippedEdges.slice(0, 5),

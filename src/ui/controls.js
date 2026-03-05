@@ -62,6 +62,16 @@ function selectedFromChecklist(container) {
     return new Set(boxes.filter((b) => b.checked).map((b) => b.value));
 }
 
+function collectAllOrgTypes(cy) {
+    const all = [];
+    cy.nodes().forEach((n) => {
+        const v = n.data("orgTypes");
+        if (Array.isArray(v)) all.push(...v.map((x) => String(x ?? "").trim()));
+        else if (typeof v === "string" && v.trim()) all.push(v.trim()); // tolerate weirdness
+    });
+    return uniq(all.filter(Boolean));
+}
+
 export function initControls(cy, { onChange, onFit, onLayout }) {
     const nodeColorModeEl = document.getElementById("nodeColorMode");
     const edgeColorModeEl = document.getElementById("edgeColorMode");
@@ -70,13 +80,20 @@ export function initControls(cy, { onChange, onFit, onLayout }) {
     const geoFiltersEl = document.getElementById("geoFilters");
     const relTypeFiltersEl = document.getElementById("relTypeFilters");
 
+    const pruneToggleEl = document.getElementById("togglePrune");
+
     if (!orgCategoryFiltersEl) console.warn("[controls] Missing #orgCategoryFilters");
     if (!geoFiltersEl) console.warn("[controls] Missing #geoFilters");
     if (!relTypeFiltersEl) console.warn("[controls] Missing #relTypeFilters");
 
     // Build lists from ALL nodes/edges (not just visible)
-    const orgCats = uniq(cy.nodes().map((n) => String(n.data("orgCategory") ?? "")));
-    const geos = uniq(cy.nodes().map((n) => String(n.data("geo") ?? "")));
+    // Org categories come from *all* orgTypes arrays (for filtering).
+    const orgCats = collectAllOrgTypes(cy);
+
+    // Geo filter is primary geo
+    const geos = uniq(cy.nodes().map((n) => String(n.data("geoPrimary") ?? "")));
+
+    // Relationship types unchanged
     const relTypes = uniq(cy.edges().map((e) => String(e.data("relType") ?? "")));
 
     console.log("[controls] orgCats:", orgCats.length, orgCats.slice(0, 10));
@@ -87,9 +104,18 @@ export function initControls(cy, { onChange, onFit, onLayout }) {
         onChange({
             nodeColorMode: nodeColorModeEl?.value ?? "none",
             edgeColorMode: edgeColorModeEl?.value ?? "none",
+
+            // IMPORTANT: allowedOrgCategories are compared against node.data("orgTypes") (array)
             allowedOrgCategories: selectedFromChecklist(orgCategoryFiltersEl),
+
+            // Compared against node.data("geoPrimary")
             allowedGeos: selectedFromChecklist(geoFiltersEl),
+
             allowedRelTypes: selectedFromChecklist(relTypeFiltersEl),
+
+            // prune graph selector
+            prune: pruneToggleEl?.checked ?? true,
+
         });
     };
 
@@ -99,9 +125,7 @@ export function initControls(cy, { onChange, onFit, onLayout }) {
 
     nodeColorModeEl?.addEventListener("change", emit);
     edgeColorModeEl?.addEventListener("change", emit);
-
-    document.getElementById("btnFit")?.addEventListener("click", onFit);
-    document.getElementById("btnCose")?.addEventListener("click", () => onLayout("cose"));
+    pruneToggleEl?.addEventListener("change", emit);
 
     emit();
 }
