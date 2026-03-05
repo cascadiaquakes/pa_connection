@@ -6,6 +6,7 @@
 html, body {
     height: 100%;
     margin: 0;
+    overflow: hidden;
 }
 
 #app {
@@ -14,10 +15,72 @@ html, body {
     height: 100vh;
 }
 
+#app > * {
+    min-height: 0;
+}
+
 .sidebar {
     border-right: 1px solid #e6e6e6;
     padding: 14px 12px;
-    overflow: auto;
+
+    display: grid;
+    grid-template-rows: auto 1fr;  /* tabs + scrollable content */
+
+    overflow: hidden; /* prevent page scrollbar */
+}
+
+/* --- Tabs container (light theme) --- */
+
+.tab-panels {
+    overflow-y: auto;
+    padding-top: 10px;
+    min-height: 0;
+}
+
+.sidebar-tabs {
+    position: sticky;
+    top: 0;
+}
+
+/* --- Individual tab --- */
+
+.sidebar-tabs .tab {
+    appearance: none;
+    background: none;
+    border: none;
+    color: #666;                 /* muted dark text */
+    padding: 10px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s ease;
+}
+
+.sidebar-tabs .tab:hover {
+    color: #222;
+}
+
+/* --- Active tab --- */
+
+.sidebar-tabs .tab.active {
+    color: #111;
+}
+
+/* underline indicator */
+.sidebar-tabs .tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 100%;
+    height: 3px;
+    background: #2f80ed;   /* slightly less neon than #4da3ff on white */
+    border-radius: 2px;
+}
+
+/* --- Tab content area --- */
+.tab-panels {
+    padding-top: 10px;
 }
 
 .main {
@@ -79,6 +142,7 @@ button {
 }
 
 .switch {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -89,10 +153,12 @@ button {
 /* hide default checkbox (but keep it accessible via the label click) */
 .switch input {
     position: absolute;
-    opacity: 0;
+    left: 0;
+    top: 0;
     width: 1px;
     height: 1px;
-    overflow: hidden;
+    opacity: 0;
+    margin: 0;
 }
 
 /* track */
@@ -131,4 +197,67 @@ button {
 
 .switch-label {
     user-select: none;
+}
+
+/* Status table*/
+.md-status {
+    display: grid;
+    gap: 10px;
+    max-width: 100%;
+}
+
+/* A “card” that feels like Material surfaces */
+.md-card {
+    background: #fff;
+    border: 1px solid #e9e9e9;
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* Section title */
+.md-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+/* Key/value table */
+.md-kv {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+/* Keep rows tight */
+.md-kv td {
+    padding: 6px 0;
+    vertical-align: top;
+}
+
+/* subtle row dividers (material-ish) */
+.md-kv tr + tr td {
+    border-top: 1px solid #f0f0f0;
+}
+
+/* Key styling */
+.md-k {
+    color: #555;
+    white-space: nowrap;
+    padding-right: 12px;
+}
+
+/* Value styling: wrap safely, don’t blow out width */
+.md-v {
+    text-align: right;
+    font-weight: 600;
+    color: #111;
+
+    /* critical for “too wide” issue */
+    max-width: 160px;         /* tune this if needed */
+    overflow-wrap: anywhere;  /* prevents long URLs from stretching */
+    word-break: break-word;
 }

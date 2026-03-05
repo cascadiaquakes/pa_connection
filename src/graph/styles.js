@@ -13,6 +13,10 @@ export function baseStylesheet() {
                 "text-halign": "center",
                 width: 28,
                 height: 28,
+
+                // smooth focus transitions
+                "transition-property": "opacity, border-width, text-opacity",
+                "transition-duration": "150ms",
             },
         },
         {
@@ -23,6 +27,10 @@ export function baseStylesheet() {
                 "target-arrow-color": "#bbb",
                 "target-arrow-shape": "triangle",
                 "curve-style": "bezier",
+
+                // smooth highlight transitions
+                "transition-property": "opacity, width",
+                "transition-duration": "150ms",
             },
         },
         {

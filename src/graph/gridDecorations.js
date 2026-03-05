@@ -1,14 +1,7 @@
-import { layoutConfig } from "./layoutConfig.js";
+import { layoutConfig } from "../config/layoutConfig.js";
+import { visualSpec } from "../config/visualSpec.js";
 
 function uniq(arr) { return Array.from(new Set(arr)); }
-
-function orderWithFallback(preferred, observed) {
-    const out = [];
-    const seen = new Set();
-    for (const v of (preferred ?? [])) if (!seen.has(v)) { out.push(v); seen.add(v); }
-    for (const v of observed) if (!seen.has(v)) { out.push(v); seen.add(v); }
-    return out;
-}
 
 function computeWeightsFromNodes(nodes, values, getKey) {
     const w = new Map(values.map((v) => [v, 0]));
@@ -110,10 +103,23 @@ export function addGridDecorations(cy, cfg = layoutConfig) {
 
     // column headers
     for (let ix = 0; ix < orgValues.length; ix++) {
-        const x = (xBreaks[ix] + xBreaks[ix + 1]) / 2;
+        const x0 = xBreaks[ix];
+        const x1 = xBreaks[ix + 1];
+        const x = (x0 + x1) / 2;
         const y = bounds.y0 - 35;
+
+        const colW = Math.max(60, x1 - x0);
+
         els.push({
-            data: { id: `grid_col_${ix}`, label: orgValues[ix], isGrid: "true", isGridHeader: "true" },
+            data: {
+                id: `grid_col_${ix}`,
+                label: orgValues[ix],
+                isGrid: "true",
+                isGridHeader: "true",
+                gridAxis: "col",
+                _w: colW,
+                _h: 30
+            },
             position: { x, y },
             selectable: false,
             grabbable: false,
@@ -123,10 +129,23 @@ export function addGridDecorations(cy, cfg = layoutConfig) {
 
     // row headers
     for (let iy = 0; iy < geoValues.length; iy++) {
+        const y0 = yBreaks[iy];
+        const y1 = yBreaks[iy + 1];
+        const y = (y0 + y1) / 2;
         const x = bounds.x0 - 70;
-        const y = (yBreaks[iy] + yBreaks[iy + 1]) / 2;
+
+        const rowH = Math.max(22, y1 - y0 - 6);
+
         els.push({
-            data: { id: `grid_row_${iy}`, label: geoValues[iy], isGrid: "true", isGridHeader: "true" },
+            data: {
+                id: `grid_row_${iy}`,
+                label: geoValues[iy],
+                isGrid: "true",
+                isGridHeader: "true",
+                gridAxis: "row",
+                _w: 120, // left gutter width for row labels
+                _h: rowH,
+            },
             position: { x, y },
             selectable: false,
             grabbable: false,
@@ -137,4 +156,47 @@ export function addGridDecorations(cy, cfg = layoutConfig) {
     cy.add(els);
 
     return { orgValues, geoValues, xBreaks, yBreaks };
+}
+
+function headerText(n) {
+    // Try the keys you might be using in gridDecorations
+    const v =
+        n.data("label") ??
+        n.data("name") ??
+        n.data("gridLabel") ??
+        n.data("header") ??
+        "";
+    return String(v).trim();
+}
+
+export function updateGridHeaderColors(cy, nodeColorMode) {
+    const headers = cy.nodes('[isGridHeader][isGrid="true"]');
+
+    headers.forEach((n) => n.removeData("_gridColor"));
+
+    if (!nodeColorMode || nodeColorMode === "none") return;
+
+    const spec = visualSpec.nodes?.[nodeColorMode];
+    if (!spec) {
+        console.warn("[updateGridHeaderColors] no visualSpec for mode:", nodeColorMode);
+        return;
+    }
+
+    const colors = spec.colors ?? {};
+    const fallback = spec.fallbackColor ?? "#9E9E9E";
+
+    let colored = 0;
+
+    headers.forEach((n) => {
+        const txt = headerText(n);
+        if (!txt) return;
+
+        n.data("_gridColor", colors[txt] ?? fallback);
+        colored += 1;
+    });
+
+    if (colored === 0) {
+        const sample = headers.slice(0, 10).map((n) => headerText(n)).filter(Boolean);
+        console.warn("[updateGridHeaderColors] colored 0 headers. sample header labels=", sample);
+    }
 }

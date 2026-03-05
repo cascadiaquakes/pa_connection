@@ -1,4 +1,4 @@
-import { layoutConfig } from "./layoutConfig.js";
+import { layoutConfig } from "../config/layoutConfig.js";
 
 function seededRand(seed) {
     let s = seed >>> 0;
@@ -6,18 +6,6 @@ function seededRand(seed) {
         s = (1664525 * s + 1013904223) >>> 0;
         return s / 2 ** 32;
     };
-}
-
-function orderWithFallback(preferred, observed) {
-    const out = [];
-    const seen = new Set();
-    for (const v of (preferred ?? [])) {
-        if (!seen.has(v)) { out.push(v); seen.add(v); }
-    }
-    for (const v of observed) {
-        if (!seen.has(v)) { out.push(v); seen.add(v); }
-    }
-    return out;
 }
 
 function toBreaks(values, weights, start, end, minFrac = 0.04) {

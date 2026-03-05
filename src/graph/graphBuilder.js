@@ -1,70 +1,75 @@
 import cytoscape from "cytoscape";
-import { baseStylesheet } from "./styles.js";
-import { applyBoxPresetLayout } from "./boxLayout.js";
+import {baseStylesheet} from "./styles.js";
+import {applyBoxPresetLayout} from "./boxLayout.js";
 import {addGridDecorations} from "./gridDecorations.js";
-import {layoutConfig} from "./layoutConfig.js";
+import {layoutConfig} from "../config/layoutConfig.js";
 
-export function createGraph({ container, elements }) {
+
+function gridDecorationStyles() {
+    return [
+        {
+            selector: 'node[isGridPoint][isGrid="true"]',
+            style: {
+                width: 1,
+                height: 1,
+                opacity: 0,
+                "events": "no",
+                label: "",
+                "z-index": 0,
+            },
+        },
+        {
+            selector: 'edge[isGridLine][isGrid="true"]',
+            style: {
+                width: 1,
+                "line-color": "#d0d0d0",
+                "curve-style": "straight",
+                "target-arrow-shape": "none",
+                opacity: 1,
+                "events": "no",
+                "z-index": 0,
+            },
+        },
+        {
+            selector: 'node[isGridHeader][isGrid="true"][label]',
+            style: {
+                shape: "round-rectangle",
+
+                width: "data(_w)",
+                height: "data(_h)",
+
+                label: "data(label)",
+                "font-size": 11,
+
+                "text-wrap": "wrap",
+                "text-max-width": "data(_w)",
+
+                "text-valign": "center",
+                "text-halign": "center",
+
+                "background-opacity": 0,
+                "border-width": 0,
+
+                color: "#333",
+                "z-index": 0,
+                "events": "no",
+            },
+        },
+        { selector: 'edge[!isGrid]', style: { "z-index": 5 } },
+        { selector: 'node[!isGrid]', style: { "z-index": 10 } },
+    ];
+}
+
+export function createGraph({container, elements}) {
     const cy = cytoscape({
         container,
         elements,
         style: [
             ...baseStylesheet(),
-
-            // --- Grid decoration styles ---
-            // Grid points: invisible anchors for lines
-            {
-                selector: 'node[isGridPoint][isGrid="true"]',
-                style: {
-                    width: 1,
-                    height: 1,
-                    opacity: 0,
-                    "events": "no",
-                    label: "",          // hard override: never try to map label
-                    "z-index": 0,
-                },
-            },
-
-            // Grid lines (edges)
-            {
-                selector: 'edge[isGridLine][isGrid="true"]',
-                style: {
-                    width: 1,
-                    "line-color": "#d0d0d0",
-                    "curve-style": "straight",
-                    "target-arrow-shape": "none",
-                    opacity: 1,
-                    "events": "no",
-                    "z-index": 0,
-                },
-            },
-
-            // Headers only (these have data.label)
-            {
-                selector: 'node[isGridHeader][isGrid="true"][label]',
-                style: {
-                    shape: "round-rectangle",
-                    "background-opacity": 0,
-                    "border-width": 0,
-                    label: "data(label)",
-                    "font-size": 12,
-                    "text-wrap": "wrap",
-                    "text-max-width": 140,
-                    "text-valign": "center",
-                    "text-halign": "center",
-                    "text-opacity": 0.9,
-                    color: "#333",
-                    "events": "no",
-                    "z-index": 0,
-                },
-            },
-
-            // Ensure real graph elements render above grid
-            { selector: 'edge[!isGrid]', style: { "z-index": 5 } },
-            { selector: 'node[!isGrid]', style: { "z-index": 10 } },
+            ...gridDecorationStyles(),
         ],
 
-        layout: { name: "cose", animate: false },
+        layout: {name: "cose", animate: false},
     });
 
     cy.edges().forEach((e) => {
@@ -74,53 +79,37 @@ export function createGraph({ container, elements }) {
     return cy;
 }
 
-export function applyColorModes(cy, { nodeColorMode, edgeColorMode }) {
+export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
     const ss = baseStylesheet();
 
-    // Keep grid decoration rules alive after style rebuild
+    ss.push(...gridDecorationStyles());
+    // Grid header background tint (must be >= specificity of the base header rule)
     ss.push({
-        selector: 'node[isGridPoint][isGrid="true"]',
-        style: { label: "", opacity: 0, width: 1, height: 1, "events": "no", "z-index": 0 },
-    });
-    ss.push({
-        selector: 'edge[isGridLine][isGrid="true"]',
+        selector: 'node[isGridHeader][isGrid="true"][label][_gridColor]',
         style: {
-            width: 1,
-            "line-color": "#d0d0d0",
-            "curve-style": "straight",
-            "target-arrow-shape": "none",
-            opacity: 1,
-            "events": "no",
-            "z-index": 0,
-        },
-    });
-    ss.push({
-        selector: 'node[isGridHeader][isGrid="true"][label]',
-        style: {
-            "background-opacity": 0,
-            "border-width": 0,
-            label: "data(label)",
-            "font-size": 12,
-            "text-wrap": "wrap",
-            "text-max-width": 140,
-            "text-valign": "center",
-            "text-halign": "center",
-            "text-opacity": 0.9,
+            "background-color": "data(_gridColor)",
+            "background-opacity": 0.35,
+            "text-outline-width": 0,
             color: "#333",
-            "events": "no",
-            "z-index": 0,
         },
+    });
+    ss.push({
+        selector: 'node[isGridHeader][gridAxis="col"]',
+        style: {
+            "font-size": 10,
+            "text-wrap": "wrap",
+        }
     });
 
     // Ensure real nodes/edges above grid
-    ss.push({ selector: 'edge[!isGrid]', style: { "z-index": 5 } });
-    ss.push({ selector: 'node[!isGrid]', style: { "z-index": 10 } });
+    ss.push({selector: 'edge[!isGrid]', style: {"z-index": 5}});
+    ss.push({selector: 'node[!isGrid]', style: {"z-index": 10}});
 
     // Node color mode (do NOT affect grid)
     if (nodeColorMode !== "none") {
         ss.push({
             selector: 'node[!isGrid][_nodeColor]',
-            style: { "background-color": "data(_nodeColor)" },
+            style: {"background-color": "data(_nodeColor)"},
         });
     }
 
@@ -135,6 +124,54 @@ export function applyColorModes(cy, { nodeColorMode, edgeColorMode }) {
         });
     }
 
+    // --- Focus mode (selection spotlight) ---
+
+// Dim everything else
+    ss.push({
+        selector: "node[!isGrid].dim",
+        style: {
+            opacity: 0.10,
+            "text-opacity": 0.0,
+        },
+    });
+    ss.push({
+        selector: "edge[!isGrid].dim",
+        style: {
+            opacity: 0.08,
+        },
+    });
+
+// Secondary emphasis: neighbors + connected edges
+    ss.push({
+        selector: "node[!isGrid].neighbor",
+        style: {
+            opacity: 0.55,
+            "text-opacity": 1,
+            "border-width": 2,
+            "border-color": "rgba(47, 128, 237, 0.55)",
+        },
+    });
+    ss.push({
+        selector: "edge[!isGrid].connected",
+        style: {
+            opacity: 0.75,
+            width: 3,
+            "z-index": 50,
+        },
+    });
+
+// Primary emphasis: selected node
+    ss.push({
+        selector: "node[!isGrid].selected",
+        style: {
+            opacity: 1,
+            "text-opacity": 1,
+            "border-width": 5,
+            "border-color": "#2f80ed",
+            "z-index": 100,
+        },
+    });
+
     cy.style(ss);
 }
 
@@ -144,7 +181,7 @@ function asSet(x) {
 
 export function recomputeVisibility(
     cy,
-    { allowedOrgCategories, allowedGeos, allowedRelTypes, prune = true } = {}
+    {allowedOrgCategories, allowedGeos, allowedRelTypes, prune = true} = {}
 ) {
     allowedOrgCategories = asSet(allowedOrgCategories);
     allowedGeos = asSet(allowedGeos);
@@ -212,5 +249,5 @@ export function runLayout(cy, name) {
         applyBoxPresetLayout(cy, layoutConfig);
         return;
     }
-    cy.layout({ name, animate: true, animationDuration: 300 }).run();
+    cy.layout({name, animate: true, animationDuration: 300}).run();
 }

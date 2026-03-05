@@ -9,9 +9,13 @@ import {
     recomputeVisibility,
 } from "./graph/graphBuilder.js";
 import { initControls } from "./ui/controls.js";
+import { initSidebarTabs } from "./ui/tabs.js";
 import {applyBoxPresetLayout} from "./graph/boxLayout.js";
-import { addGridDecorations } from "./graph/gridDecorations.js";
-
+import {addGridDecorations, updateGridHeaderColors} from "./graph/gridDecorations.js";
+import { initGraphStatus, updateGraphStatus } from "./ui/graphStatus.js";
+import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
+import { initSelectionHighlight } from "./graph/selectionHighlight.js";
+import { initSelectionInfo } from "./ui/selectionInfo.js";
 
 function showFatal(err) {
     console.error(err);
@@ -48,14 +52,30 @@ function showFatal(err) {
             elements: { nodes, edges },
         });
 
+        //  for debug
+        window.cy = cy
+
         addGridDecorations(cy);
         applyBoxPresetLayout(cy);
-
+        initSidebarTabs({ defaultTab: "settings" });
+        initGraphStatus({
+            totalNodes: nodes.length,
+            totalEdges: edges.length,
+            nodesUrl,
+            edgesUrl,
+        });
+        initSelectionInfo(cy);
+        initSelectionHighlight(cy);
         initControls(cy, {
-            onChange: ({ nodeColorMode, edgeColorMode, allowedOrgCategories, allowedGeos, allowedRelTypes, prune }) => {
+            onChange: (state) => {
+                const { nodeColorMode, edgeColorMode, allowedOrgCategories, allowedGeos, allowedRelTypes, prune } = state;
+                setNodeColorData(cy, nodeColorMode);
+                setEdgeColorData(cy, edgeColorMode);
                 applyColorModes(cy, { nodeColorMode, edgeColorMode });
                 recomputeVisibility(cy, { allowedOrgCategories, allowedGeos, allowedRelTypes, prune });
                 runLayout(cy, "boxes");
+                updateGridHeaderColors(cy, nodeColorMode);
+                updateGraphStatus(cy, state);
             },
             onFit: () => cy.fit(undefined, 30),
             onLayout: (name) => runLayout(cy, name),

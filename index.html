@@ -8,62 +8,110 @@
 <body>
 <div id="app">
     <aside class="sidebar">
-        <h2>Graph controls</h2>
+        <!-- Tabs header -->
+        <div class="sidebar-tabs" role="tablist" aria-label="Sidebar tabs">
+            <button
+                    type="button"
+                    class="tab active"
+                    id="tabSettings"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="panelSettings"
+            >
+                Settings
+            </button>
 
-        <section class="panel">
-            <h3>Coloring</h3>
+            <button
+                    type="button"
+                    class="tab"
+                    id="tabInfo"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panelInfo"
+            >
+                Info
+            </button>
+        </div>
 
-            <label class="row">
-                <span>Nodes</span>
-                <select id="nodeColorMode">
-                    <option value="none">None</option>
-                    <option value="orgCat">Organization Category</option>
-                    <option value="geo">Geographic Area</option>
-                </select>
-            </label>
+        <!-- Tabs content -->
+        <div class="tab-panels">
+            <!-- SETTINGS -->
+            <div
+                    class="tab-panel active"
+                    id="panelSettings"
+                    role="tabpanel"
+                    aria-labelledby="tabSettings"
+            >
+                <section class="panel">
+                    <h3>Coloring</h3>
 
-            <label class="row">
-                <span>Edges</span>
-                <select id="edgeColorMode">
-                    <option value="none">None</option>
-                    <option value="relType">Relationship type</option>
-                </select>
-            </label>
-        </section>
+                    <label class="row">
+                        <span>Nodes</span>
+                        <select id="nodeColorMode">
+                            <option value="none">None</option>
+                            <option value="orgCat">Organization Category</option>
+                            <option value="geo">Geographic Area</option>
+                        </select>
+                    </label>
 
-        <!-- Node Filters -->
-        <section class="panel">
-            <h3>Node filters</h3>
+                    <label class="row">
+                        <span>Edges</span>
+                        <select id="edgeColorMode">
+                            <option value="none">None</option>
+                            <option value="relType">Relationship type</option>
+                        </select>
+                    </label>
+                </section>
 
-            <div class="hint">Organization Category</div>
-            <div id="orgCategoryFilters" class="checklist"></div>
+                <!-- Node Filters -->
+                <section class="panel">
+                    <h3>Node filters</h3>
 
-            <div class="hint" style="margin-top: 10px;">Geographic Area</div>
-            <div id="geoFilters" class="checklist"></div>
-        </section>
+                    <div class="hint">Organization Category</div>
+                    <div id="orgCategoryFilters" class="checklist"></div>
 
-        <!-- Edge Filters -->
-        <section class="panel">
-            <h3>Edge filters</h3>
+                    <div class="hint" style="margin-top: 10px;">Geographic Area</div>
+                    <div id="geoFilters" class="checklist"></div>
+                </section>
 
-            <div class="hint">Relationship type</div>
-            <div id="relTypeFilters" class="checklist"></div>
-        </section>
+                <!-- Edge Filters -->
+                <section class="panel">
+                    <h3>Edge filters</h3>
 
-        <section class="panel">
-            <h3>Graph</h3>
+                    <div class="hint">Relationship type</div>
+                    <div id="relTypeFilters" class="checklist"></div>
+                </section>
 
-            <label class="switch">
-                <input type="checkbox" id="togglePrune" checked />
-                <span class="slider" aria-hidden="true"></span>
-                <span class="switch-label">Prune isolated nodes</span>
-            </label>
-        </section>
+                <section class="panel">
+                    <h3>Graph</h3>
 
-        <section class="panel">
-            <h3>Selection</h3>
-            <pre id="selectionBox" class="selectionBox">(click a node/edge)</pre>
-        </section>
+                    <label class="switch">
+                        <input type="checkbox" id="togglePrune" checked />
+                        <span class="slider" aria-hidden="true"></span>
+                        <span class="switch-label">Prune isolated nodes</span>
+                    </label>
+                </section>
+            </div>
+
+            <!-- INFO -->
+            <div
+                    class="tab-panel"
+                    id="panelInfo"
+                    role="tabpanel"
+                    aria-labelledby="tabInfo"
+                    hidden
+            >
+                <section class="panel">
+                    <h3>Selection</h3>
+                    <div id="infoSelection"></div>
+                </section>
+                <section class="panel">
+                    <h3>Status</h3>
+                    <div id="infoStatus"></div>
+                </section>
+
+            </div>
+        </div>
     </aside>
 
     <main class="main">
