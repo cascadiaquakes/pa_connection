@@ -8,7 +8,7 @@ function seededRand(seed) {
     };
 }
 
-function toBreaks(values, weights, start, end, minFrac = 0.04) {
+function toBreaks(values, weights, start, end, minFrac = 0.1) {
     // Allocate minimum fraction per band so tiny categories are still visible.
     const total = Array.from(weights.values()).reduce((a, b) => a + b, 0) || 1;
     const n = values.length || 1;

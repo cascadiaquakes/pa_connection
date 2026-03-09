@@ -7,7 +7,7 @@ export const layoutConfig = {
     orgTypeOrder: visualSpec.nodes.orgCat.order,
     geoOrder: visualSpec.nodes.geo.order,
 
-    minColFrac: 0.05,
+    minColFrac: 0.1,
     minRowFrac: 0.06,
 
     jitter: { x: 18, y: 12, seed: 1337 },

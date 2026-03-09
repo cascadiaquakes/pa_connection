@@ -1,4 +1,4 @@
-# P&A network viz
+# P&A network visualization
 
 ## Overview
 
