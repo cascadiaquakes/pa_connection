@@ -1,9 +1,21 @@
 import cytoscape from "cytoscape";
-import {baseStylesheet} from "./styles.js";
-import {applyBoxPresetLayout} from "./boxLayout.js";
-import {addGridDecorations} from "./gridDecorations.js";
-import {layoutConfig} from "../config/layoutConfig.js";
+import { baseStylesheet } from "./styles.js";
+import { applyBoxPresetLayout } from "./boxLayout.js";
+import { addGridDecorations } from "./gridDecorations.js";
+import { layoutConfig } from "../config/layoutConfig.js";
+import { deriveGraphView } from "./graphViewData.js";
 
+
+function normalizeElements(elements) {
+    if (Array.isArray(elements)) return elements;
+
+    if (elements && Array.isArray(elements.nodes) && Array.isArray(elements.edges)) {
+        return [...elements.nodes, ...elements.edges];
+    }
+
+    console.error("[graphBuilder] Invalid elements passed to createGraph:", elements);
+    return [];
+}
 
 function gridDecorationStyles() {
     return [
@@ -60,30 +72,52 @@ function gridDecorationStyles() {
     ];
 }
 
-export function createGraph({container, elements}) {
-    const cy = cytoscape({
-        container,
-        elements,
-        style: [
-            ...baseStylesheet(),
-            ...gridDecorationStyles(),
-        ],
+function edgeDirectionStyles() {
+    return [
+        {
+            selector: 'edge[isAggregated = "true"]',
+            style: {
+                width: "data(_width)",
+                "line-color": "#9aa0a6",
+                "source-arrow-color": "#9aa0a6",
+                "target-arrow-color": "#9aa0a6",
+                "curve-style": "unbundled-bezier",
+                "control-point-distances": 50,
+                "control-point-weights": 0.5,
 
-        layout: {name: "cose", animate: false},
-    });
-
-    cy.edges().forEach((e) => {
-        if (e.data("_missingEndpoint")) e.addClass("missingEndpoint");
-    });
-
-    return cy;
+                "source-arrow-shape": "none",
+                "target-arrow-shape": "none",
+            },
+        },
+        {
+            selector: 'edge[isAggregated = "true"][_dir = "forward"]',
+            style: {
+                "source-arrow-shape": "none",
+                "target-arrow-shape": "triangle",
+            },
+        },
+        {
+            selector: 'edge[isAggregated = "true"][_dir = "reverse"]',
+            style: {
+                "source-arrow-shape": "triangle",
+                "target-arrow-shape": "none",
+            },
+        },
+        {
+            selector: 'edge[isAggregated = "true"][_dir = "bidir"]',
+            style: {
+                "source-arrow-shape": "triangle",
+                "target-arrow-shape": "triangle",
+            },
+        },
+    ];
 }
 
-export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
+function buildStylesheet({ nodeColorMode, edgeDisplayMode }) {
     const ss = baseStylesheet();
 
     ss.push(...gridDecorationStyles());
-    // Grid header background tint (must be >= specificity of the base header rule)
+
     ss.push({
         selector: 'node[isGridHeader][isGrid="true"][label][_gridColor]',
         style: {
@@ -93,40 +127,43 @@ export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
             color: "#333",
         },
     });
+
     ss.push({
         selector: 'node[isGridHeader][gridAxis="col"]',
         style: {
             "font-size": 10,
             "text-wrap": "wrap",
-        }
+        },
     });
 
-    // Ensure real nodes/edges above grid
-    ss.push({selector: 'edge[!isGrid]', style: {"z-index": 5}});
-    ss.push({selector: 'node[!isGrid]', style: {"z-index": 10}});
+    ss.push({ selector: 'edge[!isGrid]', style: { "z-index": 5 } });
+    ss.push({ selector: 'node[!isGrid]', style: { "z-index": 10 } });
 
-    // Node color mode (do NOT affect grid)
     if (nodeColorMode !== "none") {
         ss.push({
             selector: 'node[!isGrid][_nodeColor]',
-            style: {"background-color": "data(_nodeColor)"},
+            style: { "background-color": "data(_nodeColor)" },
         });
     }
 
-    // Edge color mode (do NOT affect grid)
-    if (edgeColorMode !== "none") {
+    // Simplified mode: aggregated gray edges with arrows
+    if (edgeDisplayMode === "simplified") {
+        ss.push(...edgeDirectionStyles());
+    }
+
+    // Detailed mode: raw colored edges
+    if (edgeDisplayMode === "detailed") {
         ss.push({
             selector: 'edge[!isGrid][_edgeColor]',
             style: {
                 "line-color": "data(_edgeColor)",
+                "source-arrow-color": "data(_edgeColor)",
                 "target-arrow-color": "data(_edgeColor)",
             },
         });
     }
 
-    // --- Focus mode (selection spotlight) ---
-
-// Dim everything else
+    // Focus mode
     ss.push({
         selector: "node[!isGrid].dim",
         style: {
@@ -134,6 +171,7 @@ export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
             "text-opacity": 0.0,
         },
     });
+
     ss.push({
         selector: "edge[!isGrid].dim",
         style: {
@@ -141,7 +179,6 @@ export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
         },
     });
 
-// Secondary emphasis: neighbors + connected edges
     ss.push({
         selector: "node[!isGrid].neighbor",
         style: {
@@ -151,6 +188,7 @@ export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
             "border-color": "rgba(47, 128, 237, 0.55)",
         },
     });
+
     ss.push({
         selector: "edge[!isGrid].connected",
         style: {
@@ -160,7 +198,6 @@ export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
         },
     });
 
-// Primary emphasis: selected node
     ss.push({
         selector: "node[!isGrid].selected",
         style: {
@@ -172,74 +209,67 @@ export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
         },
     });
 
-    cy.style(ss);
+    return ss;
 }
 
-function asSet(x) {
-    return x instanceof Set ? x : new Set();
+function splitGridAndReal(elements) {
+    const normalized = normalizeElements(elements);
+
+    const grid = [];
+    const real = [];
+
+    for (const el of normalized) {
+        if (el?.data?.isGrid === "true") grid.push(el);
+        else real.push(el);
+    }
+
+    return { grid, real };
 }
 
-export function recomputeVisibility(
-    cy,
-    {allowedOrgCategories, allowedGeos, allowedRelTypes, prune = true} = {}
-) {
-    allowedOrgCategories = asSet(allowedOrgCategories);
-    allowedGeos = asSet(allowedGeos);
-    allowedRelTypes = asSet(allowedRelTypes);
+
+export function createGraph({ container, elements, initialView = {} }) {
+    const normalized = normalizeElements(elements);
+    const { grid, real } = splitGridAndReal(normalized);
+
+    const cy = cytoscape({
+        container,
+        elements: [...grid, ...real],
+        style: buildStylesheet({
+            nodeColorMode: initialView.nodeColorMode ?? "none",
+            edgeDisplayMode: initialView.edgeDisplayMode ?? "simplified",
+        }),
+        layout: { name: "cose", animate: false },
+    });
+
+    cy.scratch("_rawElements", real);
+    cy.scratch("_gridElements", grid);
+
+    cy.edges().forEach((e) => {
+        if (e.data("_missingEndpoint")) e.addClass("missingEndpoint");
+    });
+
+    return cy;
+}
+
+export function applyView(cy, view = {}) {
+    const rawElements = cy.scratch("_rawElements") ?? [];
+    const gridElements = cy.scratch("_gridElements") ?? [];
+
+    const derived = deriveGraphView(rawElements, view);
 
     cy.batch(() => {
-        // 0) Clean slate
-        cy.nodes().style("display", "none");
-        cy.edges().style("display", "none");
+        cy.elements('[!isGrid]').remove();
+        cy.add([...derived.nodes, ...derived.edges]);
 
-        // Always show grid decorations
-        cy.elements('[isGrid="true"]').style("display", "element");
-
-        // 1) Show real nodes that pass filters
-        cy.nodes('[!isGrid]').forEach((n) => {
-            const geo = String(n.data("geoPrimary") ?? "");
-
-            const orgTypes = n.data("orgTypes");
-            const typesArr = Array.isArray(orgTypes)
-                ? orgTypes.map((t) => String(t ?? ""))
-                : [String(n.data("orgTypePrimary") ?? "")];
-
-            const okCat = typesArr.some((t) => allowedOrgCategories.has(t));
-            const okGeo = allowedGeos.has(geo);
-
-            if (okCat && okGeo) n.style("display", "element");
-        });
-
-        // 2) Show real edges that pass filters AND connect visible real nodes
-        cy.edges('[!isGrid]').forEach((e) => {
-            const rt = String(e.data("relType") ?? "");
-            if (!allowedRelTypes.has(rt)) return;
-
-            const sVisible = e.source().style("display") !== "none";
-            const tVisible = e.target().style("display") !== "none";
-            if (sVisible && tVisible) e.style("display", "element");
-        });
-
-        // 3) Optional prune of isolated nodes
-        if (prune) {
-            cy.nodes().forEach((n) => {
-                if (n.style("display") === "none") return;
-
-                const hasVisibleEdge = n.connectedEdges().some(
-                    (e) => e.style("display") !== "none"
-                );
-
-                if (!hasVisibleEdge) n.style("display", "none");
-            });
+        // make sure grid still exists; usually it already does
+        if (cy.elements('[isGrid="true"]').length === 0 && gridElements.length > 0) {
+            cy.add(gridElements);
         }
 
-        // 4) Safety pass for real edges only
-        cy.edges('[!isGrid]').forEach((e) => {
-            if (e.style("display") === "none") return;
-            const sVisible = e.source().style("display") !== "none";
-            const tVisible = e.target().style("display") !== "none";
-            if (!sVisible || !tVisible) e.style("display", "none");
-        });
+        cy.style(buildStylesheet({
+            nodeColorMode: view.nodeColorMode ?? "none",
+            edgeDisplayMode: view.edgeDisplayMode ?? "simplified",
+        }));
     });
 }
 
@@ -249,5 +279,5 @@ export function runLayout(cy, name) {
         applyBoxPresetLayout(cy, layoutConfig);
         return;
     }
-    cy.layout({name, animate: true, animationDuration: 300}).run();
+    cy.layout({ name, animate: true, animationDuration: 300 }).run();
 }

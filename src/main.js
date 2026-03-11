@@ -1,21 +1,20 @@
 import "./style.css";
 
-import { loadCsvRows } from "./data/dataloader.js";
-import { buildElementsFromRows } from "./data/transforms.js";
+import {loadCsvRows} from "./data/dataloader.js";
+import {buildElementsFromRows} from "./data/transforms.js";
 import {
     createGraph,
-    applyColorModes,
     runLayout,
-    recomputeVisibility,
+    applyView
 } from "./graph/graphBuilder.js";
-import { initControls } from "./ui/controls.js";
-import { initSidebarTabs } from "./ui/tabs.js";
+import {initControls} from "./ui/controls.js";
+import {initSidebarTabs} from "./ui/tabs.js";
 import {applyBoxPresetLayout} from "./graph/boxLayout.js";
 import {addGridDecorations, updateGridHeaderColors} from "./graph/gridDecorations.js";
-import { initGraphStatus, updateGraphStatus } from "./ui/graphStatus.js";
+import {initGraphStatus, updateGraphStatus} from "./ui/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
-import { initSelectionHighlight } from "./graph/selectionHighlight.js";
-import { initSelectionInfo } from "./ui/selectionInfo.js";
+import {initSelectionHighlight} from "./graph/selectionHighlight.js";
+import {initSelectionInfo} from "./ui/selectionInfo.js";
 
 function showFatal(err) {
     console.error(err);
@@ -34,7 +33,7 @@ function showFatal(err) {
         const nodesUrl = `${base}data/organizations_clean.csv`;
         const edgesUrl = `${base}data/edges_clean.csv`;
 
-        const loaded = await loadCsvRows({ nodesUrl, edgesUrl });
+        const loaded = await loadCsvRows({nodesUrl, edgesUrl});
 
         console.log("[main] loadCsvRows returned:", loaded);
 
@@ -43,13 +42,13 @@ function showFatal(err) {
 
         console.log("[main] nodeRows:", nodeRows.length, "edgeRows:", edgeRows.length);
 
-        const { nodes, edges, diagnostics } = buildElementsFromRows(nodeRows, edgeRows);
+        const {nodes, edges, diagnostics} = buildElementsFromRows(nodeRows, edgeRows);
 
-        console.log("[main] elements:", { nodes: nodes.length, edges: edges.length, diagnostics });
+        console.log("[main] elements:", {nodes: nodes.length, edges: edges.length, diagnostics});
 
         const cy = createGraph({
             container: document.getElementById("cy"),
-            elements: { nodes, edges },
+            elements: {nodes, edges},
         });
 
         //  for debug
@@ -57,7 +56,7 @@ function showFatal(err) {
 
         addGridDecorations(cy);
         applyBoxPresetLayout(cy);
-        initSidebarTabs({ defaultTab: "settings" });
+        initSidebarTabs({defaultTab: "settings"});
         initGraphStatus({
             totalNodes: nodes.length,
             totalEdges: edges.length,
@@ -68,11 +67,24 @@ function showFatal(err) {
         initSelectionHighlight(cy);
         initControls(cy, {
             onChange: (state) => {
-                const { nodeColorMode, edgeColorMode, allowedOrgCategories, allowedGeos, allowedRelTypes, prune } = state;
+                const {
+                    nodeColorMode,
+                    edgeDisplayMode,
+                    allowedOrgCategories,
+                    allowedGeos,
+                    allowedRelTypes,
+                    prune
+                } = state;
                 setNodeColorData(cy, nodeColorMode);
-                setEdgeColorData(cy, edgeColorMode);
-                applyColorModes(cy, { nodeColorMode, edgeColorMode });
-                recomputeVisibility(cy, { allowedOrgCategories, allowedGeos, allowedRelTypes, prune });
+                applyView(cy, {
+                    allowedOrgCategories,
+                    allowedGeos,
+                    allowedRelTypes,
+                    prune,
+                    nodeColorMode,
+                    edgeDisplayMode,
+                });
+                setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
                 runLayout(cy, "boxes");
                 updateGridHeaderColors(cy, nodeColorMode);
                 updateGraphStatus(cy, state);

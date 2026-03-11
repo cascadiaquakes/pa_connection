@@ -5,14 +5,18 @@ export function baseStylesheet() {
             style: {
                 "background-color": "#888",
                 label: "data(label)",
+
+                shape: "round-rectangle",
+
                 "font-size": 10,
                 color: "#111",
                 "text-outline-width": 2,
                 "text-outline-color": "#fff",
                 "text-valign": "center",
                 "text-halign": "center",
-                width: 28,
-                height: 28,
+
+                width: 40,
+                height: 25,
 
                 // smooth focus transitions
                 "transition-property": "opacity, border-width, text-opacity",

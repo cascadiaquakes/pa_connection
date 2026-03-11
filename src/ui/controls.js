@@ -72,9 +72,9 @@ function collectAllOrgTypes(cy) {
     return uniq(all.filter(Boolean));
 }
 
-export function initControls(cy, { onChange, onFit, onLayout }) {
+export function initControls(cy, { onChange}) {
     const nodeColorModeEl = document.getElementById("nodeColorMode");
-    const edgeColorModeEl = document.getElementById("edgeColorMode");
+    const edgeDisplayModeEl = document.getElementById("edgeDisplayMode");
 
     const orgCategoryFiltersEl = document.getElementById("orgCategoryFilters");
     const geoFiltersEl = document.getElementById("geoFilters");
@@ -103,7 +103,7 @@ export function initControls(cy, { onChange, onFit, onLayout }) {
     const emit = () => {
         onChange({
             nodeColorMode: nodeColorModeEl?.value ?? "none",
-            edgeColorMode: edgeColorModeEl?.value ?? "none",
+            edgeDisplayMode: edgeDisplayModeEl?.value ?? "none",
 
             // IMPORTANT: allowedOrgCategories are compared against node.data("orgTypes") (array)
             allowedOrgCategories: selectedFromChecklist(orgCategoryFiltersEl),
@@ -124,7 +124,7 @@ export function initControls(cy, { onChange, onFit, onLayout }) {
     if (relTypeFiltersEl) renderChecklist(relTypeFiltersEl, relTypes, emit);
 
     nodeColorModeEl?.addEventListener("change", emit);
-    edgeColorModeEl?.addEventListener("change", emit);
+    edgeDisplayModeEl?.addEventListener("change", emit);
     pruneToggleEl?.addEventListener("change", emit);
 
     emit();
