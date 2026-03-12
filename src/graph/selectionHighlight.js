@@ -7,33 +7,41 @@ export function initSelectionHighlight(cy) {
     };
 
     const apply = () => {
-        const selNodes = cy.nodes(":selected[!isGrid]");
-        const selEdges = cy.edges(":selected[!isGrid]");
+        const selNodes = cy.nodes(":selected[!isGrid]").filter(
+            (n) => n.style("display") !== "none"
+        );
+        const selEdges = cy.edges(":selected[!isGrid]").filter(
+            (e) => e.style("display") !== "none"
+        );
 
-        // Nothing selected → normal graph
         if (selNodes.length === 0 && selEdges.length === 0) {
             clear();
             return;
         }
 
         cy.batch(() => {
-            // Dim everything first
             cy.nodes("[!isGrid]").addClass("dim").removeClass("selected neighbor");
             cy.edges("[!isGrid]").addClass("dim").removeClass("connected");
 
             if (selNodes.length > 0) {
-                const connectedEdges = selNodes.connectedEdges("[!isGrid]");
-                const neighborNodes = connectedEdges.connectedNodes("[!isGrid]");
+                const connectedEdges = selNodes
+                    .connectedEdges("[!isGrid]")
+                    .filter((e) => e.style("display") !== "none");
+
+                const neighborNodes = connectedEdges
+                    .connectedNodes("[!isGrid]")
+                    .filter((n) => n.style("display") !== "none")
+                    .difference(selNodes);
 
                 connectedEdges.removeClass("dim").addClass("connected");
                 neighborNodes.removeClass("dim").addClass("neighbor");
-
-                // Selected nodes strongest
                 selNodes.removeClass("dim neighbor").addClass("selected");
             } else if (selEdges.length > 0) {
-                // Edge-only selection: emphasize selected edges + endpoints
+                const endpoints = selEdges
+                    .connectedNodes("[!isGrid]")
+                    .filter((n) => n.style("display") !== "none");
+
                 selEdges.removeClass("dim").addClass("connected");
-                const endpoints = selEdges.connectedNodes("[!isGrid]");
                 endpoints.removeClass("dim").addClass("neighbor");
             }
         });
@@ -41,10 +49,53 @@ export function initSelectionHighlight(cy) {
 
     cy.on("select unselect", "node, edge", apply);
 
-    // clicking background often clears selection; re-apply to clear dimming
     cy.on("tap", (evt) => {
         if (evt.target === cy) apply();
     });
 
     apply();
+}
+
+/**
+ * Return visible, non-grid nodes belonging to a row/column bucket.
+ *
+ * axis:
+ *   - "col" => match node.data("orgTypePrimary")
+ *   - "row" => match node.data("geoPrimary")
+ */
+export function getVisibleNodesForHeader(cy, { axis, key }) {
+    return cy.nodes("[!isGrid]").filter((n) => {
+        if (n.style("display") === "none") return false;
+
+        if (axis === "col") return String(n.data("orgTypePrimary") ?? "Unknown") === String(key);
+        if (axis === "row") return String(n.data("geoPrimary") ?? "Unknown") === String(key);
+
+        return false;
+    });
+}
+
+/**
+ * Clear current selection and select all visible nodes in the clicked header bucket.
+ * This reuses the existing Cytoscape selection state, which initSelectionHighlight()
+ * already listens to.
+ */
+export function selectNodesFromHeader(
+    cy,
+    { axis, key, fit = false, padding = 40 } = {}
+) {
+    const nodes = getVisibleNodesForHeader(cy, { axis, key });
+
+    cy.batch(() => {
+        cy.elements(":selected").unselect();
+
+        if (nodes.length > 0) {
+            nodes.select();
+        }
+    });
+
+    if (fit && nodes.length > 0) {
+        cy.fit(nodes, padding);
+    }
+
+    return nodes;
 }

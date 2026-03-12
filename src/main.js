@@ -10,7 +10,7 @@ import {
 import {initControls} from "./ui/controls.js";
 import {initSidebarTabs} from "./ui/tabs.js";
 import {applyBoxPresetLayout} from "./graph/boxLayout.js";
-import {addGridDecorations, updateGridHeaderColors} from "./graph/gridDecorations.js";
+import {addGridDecorations, updateGridHeaderColors, initGridHeaderInteractions} from "./graph/gridDecorations.js";
 import {initGraphStatus, updateGraphStatus} from "./ui/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {initSelectionHighlight} from "./graph/selectionHighlight.js";
@@ -55,6 +55,7 @@ function showFatal(err) {
         window.cy = cy
 
         addGridDecorations(cy);
+        initGridHeaderInteractions(cy, {fit: false, toggle: true});
         applyBoxPresetLayout(cy);
         initSidebarTabs({defaultTab: "settings"});
         initGraphStatus({

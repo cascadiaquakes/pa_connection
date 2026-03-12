@@ -1,5 +1,7 @@
 import { layoutConfig } from "../config/layoutConfig.js";
 import { visualSpec } from "../config/visualSpec.js";
+import { selectNodesFromHeader } from "./selectionHighlight.js";
+
 
 function uniq(arr) { return Array.from(new Set(arr)); }
 
@@ -117,6 +119,7 @@ export function addGridDecorations(cy, cfg = layoutConfig) {
                 isGrid: "true",
                 isGridHeader: "true",
                 gridAxis: "col",
+                gridKey: orgValues[ix],
                 _w: colW,
                 _h: 30
             },
@@ -143,6 +146,7 @@ export function addGridDecorations(cy, cfg = layoutConfig) {
                 isGrid: "true",
                 isGridHeader: "true",
                 gridAxis: "row",
+                gridKey: geoValues[iy],
                 _w: 120, // left gutter width for row labels
                 _h: rowH,
             },
@@ -156,6 +160,49 @@ export function addGridDecorations(cy, cfg = layoutConfig) {
     cy.add(els);
 
     return { orgValues, geoValues, xBreaks, yBreaks };
+}
+
+export function initGridHeaderInteractions(cy, opts = {}) {
+    const { fit = false, padding = 40, toggle = true } = opts;
+
+    let activeHeaderId = null;
+
+    cy.on("tap", 'node[isGridHeader = "true"][isGrid = "true"]', (evt) => {
+        const header = evt.target;
+        const axis = header.data("gridAxis");
+        const key = header.data("gridKey") ?? header.data("label");
+        const headerId = header.id();
+        if (!axis || key == null) return;
+
+        if (toggle && activeHeaderId === headerId) {
+            cy.batch(() => {
+                cy.elements(":selected").unselect();
+            });
+            activeHeaderId = null;
+            return;
+        }
+
+        const nodes = selectNodesFromHeader(cy, {
+            axis,
+            key,
+            fit,
+            padding,
+        });
+
+        activeHeaderId = nodes.length > 0 ? headerId : null;
+    });
+
+    cy.on("tap", (evt) => {
+        if (evt.target === cy) {
+            activeHeaderId = null;
+        }
+    });
+
+    cy.on("unselect", () => {
+        if (cy.elements(":selected").length === 0) {
+            activeHeaderId = null;
+        }
+    });
 }
 
 function headerText(n) {
