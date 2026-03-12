@@ -8,6 +8,16 @@ function labelOrAll(setOrNull) {
     return n === 0 ? "all" : String(n);
 }
 
+function formatLayoutMode(layoutMode) {
+    switch (layoutMode) {
+        case "organic":
+            return "Self-organized";
+        case "grid":
+        default:
+            return "Grid";
+    }
+}
+
 /**
  * Initialize the Info tab status panel.
  * Call once, after you have nodes/edges counts.
@@ -56,7 +66,8 @@ export function updateGraphStatus(cy, state = {}, { statusElId = "infoStatus" } 
     const visibleEdges = cy.edges().filter((e) => isVisible(e)).length;
 
     const nodeColorMode = state.nodeColorMode ?? "none";
-    const edgeColorMode = state.edgeColorMode ?? "none";
+    const edgeDisplayMode = state.edgeDisplayMode ?? "none";
+    const layoutMode = formatLayoutMode(state.layoutMode ?? "grid");
 
     const orgCats = labelOrAll(state.allowedOrgCategories);
     const geos = labelOrAll(state.allowedGeos);
@@ -77,8 +88,9 @@ export function updateGraphStatus(cy, state = {}, { statusElId = "infoStatus" } 
         {
             title: "Display",
             rows: [
+                ["Layout", layoutMode],
                 ["Node coloring", nodeColorMode],
-                ["Edge coloring", edgeColorMode],
+                ["Edge coloring", edgeDisplayMode],
                 ["Prune isolated", prune],
             ],
         },

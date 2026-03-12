@@ -112,12 +112,98 @@ export function applyView(cy, view = {}) {
     });
 }
 
-export function runLayout(cy, name) {
-    if (name === "boxes") {
-        addGridDecorations(cy, layoutConfig);
-        applyBoxPresetLayout(cy, layoutConfig);
+function showGridDecorations(cy, show) {
+    cy.elements('[isGrid = "true"]').forEach((ele) => {
+        ele.style("display", show ? "element" : "none");
+    });
+}
+
+function isVisible(ele) {
+    return ele.style("display") !== "none";
+}
+
+function getVisibleWeightedDegree(node) {
+    return node.connectedEdges()
+        .filter((e) => isVisible(e))
+        .reduce((sum, e) => {
+            return sum + Number(e.data("weight") ?? 1);
+        }, 0);
+}
+
+function applyNodeSizing(cy, { layoutMode } = {}) {
+    const realNodes = cy.nodes('[isGrid != "true"]').filter((n) => isVisible(n));
+
+    // Fixed size for boxed/grid layout
+    if (layoutMode === "grid" || layoutMode === "boxes") {
+        realNodes.forEach((n) => {
+            n.style({
+                width: 28,
+                height: 28,
+                "font-size": 10,
+            });
+        });
         return;
     }
 
-    cy.layout({ name, animate: true, animationDuration: 300 }).run();
+    // Degree-scaled size for organic layout
+    if (layoutMode === "organic") {
+        const values = realNodes.map((n) => getVisibleWeightedDegree(n));
+        const minVal = values.length ? Math.min(...values) : 0;
+        const maxVal = values.length ? Math.max(...values) : 1;
+
+        realNodes.forEach((n) => {
+            const v = getVisibleWeightedDegree(n);
+
+            const sqrtMin = Math.sqrt(minVal);
+            const sqrtMax = Math.sqrt(maxVal);
+            const sqrtV = Math.sqrt(v);
+
+            const denom = (sqrtMax - sqrtMin) || 1;
+            const t = maxVal > minVal ? (sqrtV - sqrtMin) / denom : 0;
+
+            const size = 24 + t * 36; // 24..60
+
+            n.style({
+                width: size,
+                height: size,
+                "font-size": 10 + t * 4,
+            });
+        });
+    }
+}
+
+export function runLayout(cy, name) {
+    if (name === "boxes") {
+        addGridDecorations(cy, layoutConfig);
+        showGridDecorations(cy, true);
+        applyNodeSizing(cy, { layoutMode: "grid" });
+        applyBoxPresetLayout(cy, layoutConfig);
+        return;
+    }
+    if (name === "organic") {
+        showGridDecorations(cy, false);
+        applyNodeSizing(cy, { layoutMode: "organic" });
+        cy.layout({
+            name: "cose",
+            animate: true,
+            animationDuration: 2000,
+            fit: true,
+            padding: 40,
+            randomize: false,
+            nodeRepulsion: 8000,
+            idealEdgeLength: 120,
+            edgeElasticity: 100,
+            gravity: 0.8,
+            numIter: 1000,
+            componentSpacing: 80,
+        }).run();
+
+        return;
+    }
+
+    cy.layout({
+        name,
+        animate: true,
+        animationDuration: 2000,
+    }).run();
 }

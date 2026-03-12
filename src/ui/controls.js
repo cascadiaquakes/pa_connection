@@ -81,10 +81,15 @@ export function initControls(cy, { onChange}) {
     const relTypeFiltersEl = document.getElementById("relTypeFilters");
 
     const pruneToggleEl = document.getElementById("togglePrune");
+    const layoutToggleEl = document.getElementById("toggleLayout");
+
 
     if (!orgCategoryFiltersEl) console.warn("[controls] Missing #orgCategoryFilters");
     if (!geoFiltersEl) console.warn("[controls] Missing #geoFilters");
     if (!relTypeFiltersEl) console.warn("[controls] Missing #relTypeFilters");
+    if (!pruneToggleEl) console.warn("[controls] Missing #togglePrune");
+    if (!layoutToggleEl) console.warn("[controls] Missing #toggleLayout");
+
 
     // Build lists from ALL nodes/edges (not just visible)
     // Org categories come from *all* orgTypes arrays (for filtering).
@@ -116,6 +121,9 @@ export function initControls(cy, { onChange}) {
             // prune graph selector
             prune: pruneToggleEl?.checked ?? true,
 
+            // layout mode selector
+            layoutMode: layoutToggleEl?.checked ? "organic" : "grid",
+
         });
     };
 
@@ -126,6 +134,7 @@ export function initControls(cy, { onChange}) {
     nodeColorModeEl?.addEventListener("change", emit);
     edgeDisplayModeEl?.addEventListener("change", emit);
     pruneToggleEl?.addEventListener("change", emit);
+    layoutToggleEl?.addEventListener("change", emit);
 
     emit();
 }

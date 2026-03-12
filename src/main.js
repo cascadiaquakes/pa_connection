@@ -76,7 +76,8 @@ function showFatal(err) {
                     allowedOrgCategories,
                     allowedGeos,
                     allowedRelTypes,
-                    prune
+                    prune,
+                    layoutMode
                 } = state;
                 setNodeColorData(cy, nodeColorMode);
                 applyView(cy, {
@@ -86,14 +87,13 @@ function showFatal(err) {
                     prune,
                     nodeColorMode,
                     edgeDisplayMode,
+                    layoutMode
                 });
                 setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
-                runLayout(cy, "boxes");
+                runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
                 updateGridHeaderColors(cy, nodeColorMode);
                 updateGraphStatus(cy, state);
             },
-            onFit: () => cy.fit(undefined, 30),
-            onLayout: (name) => runLayout(cy, name),
         });
     } catch (e) {
         showFatal(e);
