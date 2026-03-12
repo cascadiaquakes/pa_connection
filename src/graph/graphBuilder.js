@@ -1,4 +1,7 @@
 import cytoscape from "cytoscape";
+import cytoscapePopper from "cytoscape-popper";
+import tippy from "tippy.js";
+import "tippy.js/dist/tippy.css";
 import {
     baseStylesheet,
     gridDecorationStyles,
@@ -10,6 +13,23 @@ import { applyBoxPresetLayout } from "./boxLayout.js";
 import { addGridDecorations } from "./gridDecorations.js";
 import { layoutConfig } from "../config/layoutConfig.js";
 import { deriveGraphView } from "./graphViewData.js";
+
+function tippyFactory(ref, content) {
+    const dummyDomEle = document.createElement("div");
+
+    return tippy(dummyDomEle, {
+        getReferenceClientRect: ref.getBoundingClientRect,
+        trigger: "manual",
+        content,
+        arrow: true,
+        placement: "top",
+        hideOnClick: false,
+        interactive: true,
+        appendTo: document.body,
+    });
+}
+
+cytoscape.use(cytoscapePopper(tippyFactory));
 
 function normalizeElements(elements) {
     if (Array.isArray(elements)) return elements;

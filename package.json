@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "cytoscape": "^3.33.1",
-    "papaparse": "^5.5.3"
+    "cytoscape-popper": "^4.0.1",
+    "papaparse": "^5.5.3",
+    "tippy.js": "^6.3.7"
   }
 }

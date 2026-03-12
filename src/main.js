@@ -15,6 +15,7 @@ import {initGraphStatus, updateGraphStatus} from "./ui/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {initSelectionHighlight} from "./graph/selectionHighlight.js";
 import {initSelectionInfo} from "./ui/selectionInfo.js";
+import { showTooltip, hideTooltip } from "./graph/tooltips.js";
 
 function showFatal(err) {
     console.error(err);
@@ -53,7 +54,8 @@ function showFatal(err) {
 
         //  for debug
         window.cy = cy
-
+        cy.on("mouseover", 'node[isGrid != "true"]', showTooltip);
+        cy.on("mouseout", 'node[isGrid != "true"]', hideTooltip);
         addGridDecorations(cy);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         applyBoxPresetLayout(cy);
