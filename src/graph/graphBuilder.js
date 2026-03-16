@@ -95,6 +95,9 @@ export function applyView(cy, view = {}) {
 
     const derived = deriveGraphView(rawElements, view);
 
+    const selectedNodeIds = cy.nodes(":selected").map((n) => n.id());
+    const selectedEdgeIds = cy.edges(":selected").map((e) => e.id());
+
     cy.batch(() => {
         cy.elements('[!isGrid]').remove();
         cy.add([...derived.nodes, ...derived.edges]);
@@ -109,6 +112,16 @@ export function applyView(cy, view = {}) {
                 edgeDisplayMode: view.edgeDisplayMode ?? "simplified",
             })
         );
+
+        selectedNodeIds.forEach((id) => {
+            const node = cy.getElementById(id);
+            if (node.nonempty()) node.select();
+        });
+
+        selectedEdgeIds.forEach((id) => {
+            const edge = cy.getElementById(id);
+            if (edge.nonempty()) edge.select();
+        });
     });
 }
 
