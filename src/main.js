@@ -11,10 +11,10 @@ import {initControls} from "./ui/controls.js";
 import {initSidebarTabs} from "./ui/tabs.js";
 import {applyBoxPresetLayout} from "./graph/boxLayout.js";
 import {addGridDecorations, updateGridHeaderColors, initGridHeaderInteractions} from "./graph/gridDecorations.js";
-import {initGraphStatus, updateGraphStatus} from "./ui/graphStatus.js";
+import {initGraphInfo, updateGraphInfo} from "./info/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {initSelectionHighlight} from "./graph/selectionHighlight.js";
-import {initSelectionInfo} from "./ui/selectionInfo.js";
+import {initSelectionInfo} from "./info/selectionInfo.js";
 import { showTooltip, hideTooltip } from "./graph/tooltips.js";
 
 function showFatal(err) {
@@ -60,7 +60,7 @@ function showFatal(err) {
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         applyBoxPresetLayout(cy);
         initSidebarTabs({defaultTab: "settings"});
-        initGraphStatus({
+        initGraphInfo({
             totalNodes: nodes.length,
             totalEdges: edges.length,
             nodesUrl,
@@ -92,7 +92,7 @@ function showFatal(err) {
                 setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
                 runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
                 updateGridHeaderColors(cy, nodeColorMode);
-                updateGraphStatus(cy, state);
+                updateGraphInfo(cy, state);
             },
         });
     } catch (e) {

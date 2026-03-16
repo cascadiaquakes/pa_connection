@@ -129,6 +129,12 @@ export function aggregateEdges(rawEdges) {
                     rawCount: 0,
                     _edgeColor: "#9aa0a6",
                     _width: 3,
+
+                    // new, minimal addition
+                    directionalRelTypes: {
+                        forward: [],
+                        reverse: [],
+                    },
                 },
             });
         }
@@ -141,8 +147,19 @@ export function aggregateEdges(rawEdges) {
             agg.data.relTypes.push(relType);
         }
 
-        if (s === a && t === b) agg.data._hasForward = true;
-        if (s === b && t === a) agg.data._hasReverse = true;
+        if (s === a && t === b) {
+            agg.data._hasForward = true;
+            if (!agg.data.directionalRelTypes.forward.includes(relType)) {
+                agg.data.directionalRelTypes.forward.push(relType);
+            }
+        }
+
+        if (s === b && t === a) {
+            agg.data._hasReverse = true;
+            if (!agg.data.directionalRelTypes.reverse.includes(relType)) {
+                agg.data.directionalRelTypes.reverse.push(relType);
+            }
+        }
     }
 
     for (const agg of byPair.values()) {
@@ -154,7 +171,7 @@ export function aggregateEdges(rawEdges) {
         else if (r) agg.data._dir = "reverse";
         else agg.data._dir = "none";
 
-        agg.data._width = Math.min(12, 1 + 0.8 * agg.data.rawCount)
+        agg.data._width = Math.min(12, 1 + 0.8 * agg.data.rawCount);
 
         delete agg.data._hasForward;
         delete agg.data._hasReverse;
