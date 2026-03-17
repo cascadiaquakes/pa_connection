@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Graph Dashboard</title>
+    <link rel="icon" href="/favicon.ico">
+    <title>P&A connections</title>
 </head>
 <body>
 <div id="app">
@@ -30,6 +31,16 @@
                     aria-controls="panelInfo"
             >
                 Info
+            </button>
+            <button
+                    type="button"
+                    class="tab"
+                    id="tabSearch"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panelSearch"
+            >
+                Search
             </button>
         </div>
 
@@ -111,10 +122,36 @@
                     <div id="infoSelection"></div>
                 </section>
                 <section class="panel">
-                    <h3>Status</h3>
+                    <h3>Graph stats</h3>
                     <div id="infoStatus"></div>
                 </section>
 
+            </div>
+            <div
+                    class="tab-panel"
+                    id="panelSearch"
+                    role="tabpanel"
+                    aria-labelledby="tabSearch"
+                    hidden
+            >
+                <section class="panel">
+                    <h3>Search organizations</h3>
+
+                    <label class="row" for="searchInput" style="display:block;">
+                        <span class="hint">Search across name, ID, type, geography, notes, and contacts</span>
+                        <input
+                                id="searchInput"
+                                type="text"
+                                placeholder="Type to search organizations..."
+                                autocomplete="off"
+                                spellcheck="false"
+                                style="width: 100%; margin-top: 8px;"
+                        />
+                    </label>
+
+                    <div id="searchCount" class="hint" style="margin-top: 10px;">0 results</div>
+                    <div id="searchResults" class="search-results" style="margin-top: 10px;"></div>
+                </section>
             </div>
         </div>
     </aside>

@@ -16,6 +16,9 @@ import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {initSelectionHighlight} from "./graph/selectionHighlight.js";
 import {initSelectionInfo} from "./info/selectionInfo.js";
 import { showTooltip, hideTooltip } from "./graph/tooltips.js";
+import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
+import { initSearchTab } from "./ui/searchTab.js";
+
 
 function showFatal(err) {
     console.error(err);
@@ -47,13 +50,17 @@ function showFatal(err) {
 
         console.log("[main] elements:", {nodes: nodes.length, edges: edges.length, diagnostics});
 
+        const rawElements = [...nodes, ...edges];
         const cy = createGraph({
             container: document.getElementById("cy"),
             elements: {nodes, edges},
         });
+        cy.scratch("_rawElements", rawElements);
+        cy.scratch("_nodeSearchIndex", buildNodeSearchIndex(rawElements));
 
         //  for debug
-        window.cy = cy
+        window.cy = cy;
+
         cy.on("mouseover", 'node[isGrid != "true"]', showTooltip);
         cy.on("mouseout", 'node[isGrid != "true"]', hideTooltip);
         addGridDecorations(cy);
@@ -68,7 +75,8 @@ function showFatal(err) {
         });
         initSelectionInfo(cy);
         initSelectionHighlight(cy);
-        initControls(cy, {
+        initSearchTab(cy);
+        const controls = initControls(cy, {
             onChange: (state) => {
                 const {
                     nodeColorMode,
@@ -79,6 +87,7 @@ function showFatal(err) {
                     prune,
                     layoutMode
                 } = state;
+
                 setNodeColorData(cy, nodeColorMode);
                 applyView(cy, {
                     allowedOrgCategories,
@@ -95,6 +104,7 @@ function showFatal(err) {
                 updateGraphInfo(cy, state);
             },
         });
+        cy.scratch("_controls", controls);
     } catch (e) {
         showFatal(e);
     }

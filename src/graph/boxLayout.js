@@ -164,8 +164,8 @@ export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
             const cellH = Math.max(1, y1 - y0);
 
             // padding inside the box so nodes do not sit on the border lines
-            const padX = Math.min(cfg.cellPadX ?? 24, cellW * (cfg.cellPadXFrac ?? 0.12));
-            const padY = Math.min(cfg.cellPadY ?? 20, cellH * (cfg.cellPadYFrac ?? 0.12));
+            const padX = Math.min(cfg.cellPadding.x ?? 24, cellW * (cfg.cellPadding.xFrac ?? 0.12));
+            const padY = Math.min(cfg.cellPadding.y ?? 20, cellH * (cfg.cellPadding.yFrac ?? 0.12));
 
             const xmin = x0 + padX;
             const xmax = x1 - padX;

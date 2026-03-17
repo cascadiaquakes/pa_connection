@@ -72,7 +72,7 @@ function collectAllOrgTypes(cy) {
     return uniq(all.filter(Boolean));
 }
 
-export function initControls(cy, { onChange}) {
+export function initControls(cy, { onChange }) {
     const nodeColorModeEl = document.getElementById("nodeColorMode");
     const edgeDisplayModeEl = document.getElementById("edgeDisplayMode");
 
@@ -83,22 +83,14 @@ export function initControls(cy, { onChange}) {
     const pruneToggleEl = document.getElementById("togglePrune");
     const layoutToggleEl = document.getElementById("toggleLayout");
 
-
     if (!orgCategoryFiltersEl) console.warn("[controls] Missing #orgCategoryFilters");
     if (!geoFiltersEl) console.warn("[controls] Missing #geoFilters");
     if (!relTypeFiltersEl) console.warn("[controls] Missing #relTypeFilters");
     if (!pruneToggleEl) console.warn("[controls] Missing #togglePrune");
     if (!layoutToggleEl) console.warn("[controls] Missing #toggleLayout");
 
-
-    // Build lists from ALL nodes/edges (not just visible)
-    // Org categories come from *all* orgTypes arrays (for filtering).
     const orgCats = collectAllOrgTypes(cy);
-
-    // Geo filter is primary geo
     const geos = uniq(cy.nodes().map((n) => String(n.data("geoPrimary") ?? "")));
-
-    // Relationship types unchanged
     const relTypes = uniq(cy.edges().map((e) => String(e.data("relType") ?? "")));
 
     console.log("[controls] orgCats:", orgCats.length, orgCats.slice(0, 10));
@@ -109,21 +101,11 @@ export function initControls(cy, { onChange}) {
         onChange({
             nodeColorMode: nodeColorModeEl?.value ?? "none",
             edgeDisplayMode: edgeDisplayModeEl?.value ?? "none",
-
-            // IMPORTANT: allowedOrgCategories are compared against node.data("orgTypes") (array)
             allowedOrgCategories: selectedFromChecklist(orgCategoryFiltersEl),
-
-            // Compared against node.data("geoPrimary")
             allowedGeos: selectedFromChecklist(geoFiltersEl),
-
             allowedRelTypes: selectedFromChecklist(relTypeFiltersEl),
-
-            // prune graph selector
             prune: pruneToggleEl?.checked ?? true,
-
-            // layout mode selector
             layoutMode: layoutToggleEl?.checked ? "organic" : "grid",
-
         });
     };
 
@@ -136,5 +118,27 @@ export function initControls(cy, { onChange}) {
     pruneToggleEl?.addEventListener("change", emit);
     layoutToggleEl?.addEventListener("change", emit);
 
+    function setAllChecked(container, checked) {
+        if (!container) return;
+        container.querySelectorAll('input[type="checkbox"]').forEach((el) => {
+            el.checked = checked;
+        });
+    }
+
+    function resetToFullView() {
+        setAllChecked(orgCategoryFiltersEl, true);
+        setAllChecked(geoFiltersEl, true);
+        setAllChecked(relTypeFiltersEl, true);
+
+        if (pruneToggleEl) pruneToggleEl.checked = false;
+
+        emit();
+    }
+
     emit();
+
+    return {
+        emit,
+        resetToFullView,
+    };
 }
