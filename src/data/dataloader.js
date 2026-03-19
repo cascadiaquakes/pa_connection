@@ -1,4 +1,5 @@
 import { dbg } from "../debug/logger.js";
+import { buildElementsFromRows } from "./transforms.js";
 
 const L = dbg("dataloader");
 
@@ -20,6 +21,24 @@ async function fetchText(url) {
 
     if (!r.ok) throw new Error(`Failed to fetch ${url}: ${r.status} ${r.statusText}`);
     return await r.text();
+}
+
+async function fetchJson(url) {
+    const r = await fetch(url, { cache: "no-store" });
+    const ct = (r.headers.get("content-type") || "").toLowerCase();
+
+    L.log("[fetchJson] HTTP:", r.status, r.statusText, "CT:", ct);
+
+    if (ct.includes("text/html")) {
+        const html = await r.text();
+        L.err("[fetchJson] Got HTML instead of JSON. First 300 chars:\n", html.slice(0, 300));
+        throw new Error(
+            `Expected JSON but got HTML from ${url}. This usually means the file path is wrong or rewritten to index.html.`
+        );
+    }
+
+    if (!r.ok) throw new Error(`Failed to fetch ${url}: ${r.status} ${r.statusText}`);
+    return await r.json();
 }
 
 // -------- CSV parsing (RFC4180-ish, quote-safe) --------
@@ -115,9 +134,9 @@ function parseMaybeJSONArray(s) {
 
 // -------- public API --------
 export async function loadCsvRows({
-                                      nodesUrl = "/data/organizations_clean.csv",
-                                      edgesUrl = "/data/edges_clean.csv",
-                                  } = {}) {
+    nodesUrl = "/data/organizations_clean.csv",
+    edgesUrl = "/data/edges_clean.csv",
+} = {}) {
     L.group("loadCsvRows");
     L.log("Params:", { nodesUrl, edgesUrl });
 
@@ -139,4 +158,58 @@ export async function loadCsvRows({
 
     L.groupEnd();
     return { nodeRows, edgeRows };
+}
+
+export async function loadGraphData({
+    graphUrl = "/data/graph.json",
+    nodesUrl = "/data/organizations_clean.csv",
+    edgesUrl = "/data/edges_clean.csv",
+    allowCsvFallback = true,
+} = {}) {
+    L.group("loadGraphData");
+    L.log("Params:", { graphUrl, nodesUrl, edgesUrl, allowCsvFallback });
+
+    try {
+        const payload = await fetchJson(graphUrl);
+        const nodes = payload?.elements?.nodes ?? payload?.nodes;
+        const edges = payload?.elements?.edges ?? payload?.edges;
+
+        if (!Array.isArray(nodes) || !Array.isArray(edges)) {
+            throw new Error(`Preprocessed graph payload is missing array elements at ${graphUrl}.`);
+        }
+
+        const diagnostics = payload?.diagnostics ?? null;
+        L.log("[loadGraphData] using preprocessed graph JSON:", {
+            nodes: nodes.length,
+            edges: edges.length,
+        });
+
+        L.groupEnd();
+        return {
+            nodes,
+            edges,
+            diagnostics,
+            source: "preprocessed-json",
+            sourceUrls: { graphUrl },
+        };
+    } catch (err) {
+        if (!allowCsvFallback) {
+            L.groupEnd();
+            throw err;
+        }
+
+        L.warn("[loadGraphData] preprocessed graph unavailable, falling back to CSV:", err);
+
+        const { nodeRows, edgeRows } = await loadCsvRows({ nodesUrl, edgesUrl });
+        const { nodes, edges, diagnostics } = buildElementsFromRows(nodeRows, edgeRows);
+
+        L.groupEnd();
+        return {
+            nodes,
+            edges,
+            diagnostics,
+            source: "runtime-csv",
+            sourceUrls: { nodesUrl, edgesUrl },
+        };
+    }
 }

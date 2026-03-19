@@ -1,7 +1,6 @@
 import "./style.css";
 
-import {loadCsvRows} from "./data/dataloader.js";
-import {buildElementsFromRows} from "./data/transforms.js";
+import { loadGraphData } from "./data/dataloader.js";
 import {
     createGraph,
     runLayout,
@@ -18,6 +17,8 @@ import {initSelectionInfo} from "./info/selectionInfo.js";
 import { showTooltip, hideTooltip } from "./graph/tooltips.js";
 import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
 import { initSearchTab } from "./ui/searchTab.js";
+import { initExportTab } from "./ui/exportTab.js";
+import { initSidebarResize } from "./ui/sidebarResize.js";
 
 
 function showFatal(err) {
@@ -33,27 +34,33 @@ function showFatal(err) {
     try {
         const base = import.meta.env.BASE_URL || "/";
 
-        // Files live in: public/data/*.csv  => served as: <BASE_URL>/data/*.csv
+        // Files live in: public/data/*  => served as: <BASE_URL>/data/*
+        const graphUrl = `${base}data/graph.json`;
         const nodesUrl = `${base}data/organizations_clean.csv`;
         const edgesUrl = `${base}data/edges_clean.csv`;
 
-        const loaded = await loadCsvRows({nodesUrl, edgesUrl});
+        const loaded = await loadGraphData({ graphUrl, nodesUrl, edgesUrl, allowCsvFallback: true });
+        const nodes = loaded?.nodes ?? [];
+        const edges = loaded?.edges ?? [];
+        const diagnostics = loaded?.diagnostics ?? null;
 
-        console.log("[main] loadCsvRows returned:", loaded);
-
-        const nodeRows = loaded?.nodeRows ?? [];
-        const edgeRows = loaded?.edgeRows ?? [];
-
-        console.log("[main] nodeRows:", nodeRows.length, "edgeRows:", edgeRows.length);
-
-        const {nodes, edges, diagnostics} = buildElementsFromRows(nodeRows, edgeRows);
-
-        console.log("[main] elements:", {nodes: nodes.length, edges: edges.length, diagnostics});
+        console.log("[main] elements:", {
+            nodes: nodes.length,
+            edges: edges.length,
+            diagnostics,
+            source: loaded?.source,
+            sourceUrls: loaded?.sourceUrls,
+        });
 
         const rawElements = [...nodes, ...edges];
         const cy = createGraph({
             container: document.getElementById("cy"),
             elements: {nodes, edges},
+        });
+        initSidebarResize({
+            onResize: () => {
+                cy.resize();
+            },
         });
         cy.scratch("_rawElements", rawElements);
         cy.scratch("_nodeSearchIndex", buildNodeSearchIndex(rawElements));
@@ -70,12 +77,13 @@ function showFatal(err) {
         initGraphInfo({
             totalNodes: nodes.length,
             totalEdges: edges.length,
-            nodesUrl,
-            edgesUrl,
+            nodesUrl: loaded?.sourceUrls?.graphUrl || loaded?.sourceUrls?.nodesUrl || "",
+            edgesUrl: loaded?.sourceUrls?.edgesUrl || "",
         });
         initSelectionInfo(cy);
         initSelectionHighlight(cy);
         initSearchTab(cy);
+        initExportTab(cy);
         const controls = initControls(cy, {
             onChange: (state) => {
                 const {
