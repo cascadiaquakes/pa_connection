@@ -10,8 +10,10 @@ html, body {
 }
 
 #app {
+    --sidebar-width: 320px;
+    --resizer-width: 8px;
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: var(--sidebar-width) var(--resizer-width) 1fr;
     height: 100vh;
 }
 
@@ -27,6 +29,21 @@ html, body {
     grid-template-rows: auto 1fr;  /* tabs + scrollable content */
 
     overflow: hidden; /* prevent page scrollbar */
+}
+
+.sidebar-resizer {
+    cursor: col-resize;
+    background: #f3f3f3;
+    border-right: 1px solid #e2e2e2;
+}
+
+.sidebar-resizer:hover {
+    background: #e9edf4;
+}
+
+body.is-resizing {
+    cursor: col-resize;
+    user-select: none;
 }
 
 /* --- Tabs container (light theme) --- */

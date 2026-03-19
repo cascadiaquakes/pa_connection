@@ -1,108 +1,259 @@
 # P&A network visualization
 
-## Overview
+Interactive network visualization for organizations and relationships in the P&A dataset, built with Vite + Cytoscape.
 
-The network viewer is a Cytoscape-based application designed with a
-modular structure so that **configuration**, **graph rendering**,
-**layout logic**, and **UI controls** are separated. This keeps the
-visualization maintainable and allows design or layout changes without
-rewriting the graph engine.
+## What it does
 
-## Main Components
+- Loads a preprocessed graph (`public/data/graph.json`) or falls back to source CSVs.
+- Renders organizations as nodes and relationships as edges.
+- Supports two edge display modes:
+  - `simplified`: aggregates parallel/bidirectional edges
+  - `detailed`: shows raw edge rows
+- Supports filtering by:
+  - organization category (`orgTypes`)
+  - geography (`geoPrimary`)
+  - relationship type (`relType`)
+- Supports two layouts:
+  - grid/boxed layout (category x geography matrix)
+  - organic force layout (`cose`)
+- Includes:
+  - info panel for selected node/edge details
+  - graph status panel (loaded vs visible counts + current settings)
+  - search tab (name, id, type, geography, notes, contacts)
 
-### Configuration (`config/`)
+## Tech stack
 
-Configuration files define the structure and visual styling of the
-graph.
+- Vite 7 (frontend bundler/dev server)
+- Cytoscape.js (graph rendering)
+- cytoscape-popper + tippy.js (node tooltips)
+- Python script for preprocessing CSV into graph JSON
 
-**visualSpec.js**\
-Defines color mappings for node categories and edge relationship types.
-This allows designers to adjust the visual appearance without modifying
-graph logic.
+## Requirements
 
-**layoutConfig.js**\
-Defines the grid layout used by the viewer. The graph is arranged as a
-matrix where:
+- Node.js `20.19+` (recommended for Vite 7)
+- npm
+- Python `3.10+` (tested here with 3.12)
 
--   **Columns** represent organization categories (`orgTypePrimary`)
--   **Rows** represent geographic regions (`geoPrimary`)
+## Quick start
 
-This file controls:
+1. Install dependencies:
 
--   preferred category ordering
--   layout bounds
--   minimum row/column size
--   node jitter within grid cells
+```bash
+npm install
+```
 
-### Graph Engine (`graph.js`)
+2. Generate graph JSON (recommended):
 
-This module initializes and manages the Cytoscape graph instance.
+```bash
+npm run preprocess:data
+```
 
-Responsibilities include:
+3. Start dev server:
 
--   creating the Cytoscape graph
--   defining the base stylesheet
--   applying node and edge color modes
--   recomputing graph visibility when filters change
--   running layouts
--   managing selection highlighting
+```bash
+npm run dev
+```
 
-This file acts as the interface between the UI and the underlying graph.
+4. Build production bundle:
 
-### Grid Layout System (`boxLayout.js`, `gridDecorations.js`)
+```bash
+npm run build
+```
 
-The viewer uses a **matrix-style layout** where nodes are placed based
-on categorical attributes.
+5. Preview production build:
 
-**gridDecorations.js** builds the visual grid structure:
+```bash
+npm run preview
+```
 
--   row and column lines
--   header labels
--   header background coloring based on the active color mode
+## Data pipeline
 
-**boxLayout.js** places nodes inside each grid cell using a jittered
-preset layout so nodes spread naturally within their category cell.
+Runtime loading is handled by `src/data/dataloader.js`:
 
-The layout recalculates using **only visible nodes**, allowing the grid
-to adapt when filters are applied.
+- First tries: `public/data/graph.json`
+- Fallback: `public/data/organizations_clean.csv` + `public/data/edges_clean.csv`
 
-### UI Components (`ui/`)
+### Preprocessing script
 
-UI modules control interaction with the graph.
+`npm run preprocess:data` runs:
 
-Examples:
+```bash
+python scripts/preprocess_data.py
+```
 
--   `controlsPanel.js` -- filter and coloring controls
--   `selectionHighlight.js` -- node selection spotlight effect
--   `graphStatus.js` -- graph statistics display
+Default inputs:
 
-UI modules update the graph by calling functions exposed by the graph
-engine.
+- `public/data/organizations_clean.csv`
+- `public/data/edges_clean.csv`
 
-## Rendering Flow
+Default output:
 
-When the viewer loads:
+- `public/data/graph.json`
 
-1.  Data is loaded and passed to `createGraph()`.
-2.  Cytoscape initializes with the base stylesheet.
-3.  Grid decorations are created.
-4.  Nodes are positioned using the box layout.
+Optional CLI args:
 
-When filters or settings change:
+```bash
+python scripts/preprocess_data.py --nodes path/to/nodes.csv --edges path/to/edges.csv --out path/to/graph.json
+```
 
-1.  Node and edge colors are updated.
-2.  Grid header colors update to match the active color mode.
-3.  Node and edge visibility is recomputed.
-4.  The layout recalculates using visible nodes.
+### Generated `graph.json` format
 
-This keeps the visualization compact and readable even when filters hide
-large parts of the network.
+Top-level fields:
 
-## Node Data Fields
+- `schemaVersion`
+- `generatedAt`
+- `sourceFiles`
+- `diagnostics`
+- `elements.nodes`
+- `elements.edges`
 
-The viewer relies on the following node attributes:
+`diagnostics` includes:
 
--   `label` --- display name
--   `orgTypePrimary` --- organization category (column)
--   `geoPrimary` --- geographic region (row)
--   `orgTypes` --- optional list of categories
+- counts for kept/skipped/duplicate rows
+- samples for skipped/duplicate rows
+
+## Data contracts
+
+### Node CSV fields used
+
+- `Org ID` (required, canonical node id)
+- `Organization Name`
+- `orgTypes_json` or `orgTypes`
+- `orgTypePrimary`
+- `geoPrimary`
+- `Notes`
+- `Primary`
+- `2ndry`
+
+### Edge CSV fields used
+
+- `From agency` (required)
+- `To agency` (required)
+- `Relationship type`
+- `Description`
+- `Status`
+
+### Transform rules (preprocess + runtime fallback)
+
+- Node ids are whitespace-stripped (`"A B" -> "AB"`).
+- Duplicate node ids are dropped (first kept).
+- Edges with missing source/target are dropped.
+- Edges whose endpoints are not present in nodes are dropped.
+- Stable colors are computed per category/type when needed.
+
+## Project structure
+
+```text
+public/data/
+  organizations_clean.csv
+  edges_clean.csv
+  graph.json
+
+scripts/
+  preprocess_data.py
+
+src/
+  main.js
+  style.css
+
+  config/
+    layoutConfig.js
+    visualSpec.js
+
+  data/
+    dataloader.js
+    normalize.js
+    transforms.js
+
+  graph/
+    graphBuilder.js
+    graphViewData.js
+    boxLayout.js
+    gridDecorations.js
+    graphColors.js
+    selectionHighlight.js
+    nodeSearch.js
+    tooltips.js
+    styles.js
+
+  info/
+    graphStatus.js
+    selectionInfo.js
+    nodeInfo.js
+    edgeInfo.js
+    infoRender.js
+
+  ui/
+    controls.js
+    tabs.js
+    searchTab.js
+```
+
+## UI behavior
+
+### Settings tab
+
+- Node coloring: `Organization Category`, `Geographic Area`, `None`
+- Edge mode: `Simplified` vs `Detailed`
+- Filters:
+  - Organization Category checklist
+  - Geographic Area checklist
+  - Relationship type checklist
+- Toggles:
+  - `Prune isolated nodes`
+  - `Self Organizing Layout`
+
+### Info tab
+
+- Selection card:
+  - empty state
+  - single selected node/edge detail
+  - multi-selection summary
+- Graph status card:
+  - loaded/visible counts
+  - current display/filter settings
+  - data source paths
+
+### Search tab
+
+- Debounced client-side search over indexed node fields.
+- Clicking a result selects and centers that node.
+- If result is hidden by filters, search resets to full view first.
+
+## Configuration
+
+### `src/config/visualSpec.js`
+
+Defines:
+
+- category and geography ordering
+- color palettes for node categories/geographies
+- relationship-type color palette for detailed edges
+
+### `src/config/layoutConfig.js`
+
+Defines:
+
+- matrix bounds and size fractions
+- row/column ordering
+- per-cell padding and node packing target size
+
+## Notes for maintainers
+
+- Keep `visualSpec` category names aligned with incoming data values.
+- If CSV headers change, update both:
+  - `scripts/preprocess_data.py`
+  - `src/data/transforms.js` (fallback path)
+- Runtime fallback exists for resilience, but shipping `graph.json` is preferred.
+
+## Troubleshooting
+
+- Build warning about Node version:
+  - Vite 7 expects Node `20.19+` or `22.12+`.
+- App loads but graph is empty:
+  - check `public/data/graph.json` existence and shape
+  - run `npm run preprocess:data`
+  - inspect browser console diagnostics (skipped edge/node samples)
+- CSV path issues in dev/prod:
+  - ensure files are under `public/data/`
+  - runtime URLs are built from `import.meta.env.BASE_URL`

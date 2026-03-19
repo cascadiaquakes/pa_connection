@@ -35,6 +35,16 @@
             <button
                     type="button"
                     class="tab"
+                    id="tabExport"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panelExport"
+            >
+                Export
+            </button>
+            <button
+                    type="button"
+                    class="tab"
                     id="tabSearch"
                     role="tab"
                     aria-selected="false"
@@ -129,6 +139,20 @@
             </div>
             <div
                     class="tab-panel"
+                    id="panelExport"
+                    role="tabpanel"
+                    aria-labelledby="tabExport"
+                    hidden
+            >
+                <section class="panel">
+                    <h3>Export graph</h3>
+                    <button id="btnExportJson" type="button">Download all JSON</button>
+
+                    <div id="exportStatus" class="hint" style="margin-top: 10px;"></div>
+                </section>
+            </div>
+            <div
+                    class="tab-panel"
                     id="panelSearch"
                     role="tabpanel"
                     aria-labelledby="tabSearch"
@@ -155,6 +179,13 @@
             </div>
         </div>
     </aside>
+    <div
+            id="sidebarResizer"
+            class="sidebar-resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+    ></div>
 
     <main class="main">
         <div id="cy" class="cy"></div>
