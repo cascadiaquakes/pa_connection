@@ -7,8 +7,42 @@
     <title>P&A connections</title>
 </head>
 <body>
-<div id="app">
-    <aside class="sidebar">
+<div class="app-shell">
+    <header class="app-header">
+        <div class="brand-logos" aria-label="Project sponsors">
+            <a
+                    class="brand-link"
+                    href="https://cascadiaquakes.org/"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Visit the CRESCENT website"
+            >
+                <img
+                        class="brand-logo brand-logo-crescent"
+                        src="/logos/Crescent_Logo.png"
+                        alt="CRESCENT Cascadia Region Earthquake Science Center"
+                />
+            </a>
+            <a
+                    class="brand-link"
+                    href="https://www.nsf.gov/"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Visit the U.S. National Science Foundation website"
+            >
+                <img
+                        class="brand-logo brand-logo-nsf"
+                        src="/logos/USNSF_Logo.png"
+                        alt="U.S. National Science Foundation"
+                />
+            </a>
+        </div>
+        <div class="app-header-title">P&amp;A Connections Viewer</div>
+        <div class="app-header-meta" aria-label="Release status">Prototype version 1</div>
+    </header>
+
+    <div id="app">
+        <aside class="sidebar">
         <!-- Tabs header -->
         <div class="sidebar-tabs" role="tablist" aria-label="Sidebar tabs">
             <button
@@ -178,18 +212,19 @@
                 </section>
             </div>
         </div>
-    </aside>
-    <div
-            id="sidebarResizer"
-            class="sidebar-resizer"
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize sidebar"
-    ></div>
+        </aside>
+        <div
+                id="sidebarResizer"
+                class="sidebar-resizer"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize sidebar"
+        ></div>
 
-    <main class="main">
-        <div id="cy" class="cy"></div>
-    </main>
+        <main class="main">
+            <div id="cy" class="cy"></div>
+        </main>
+    </div>
 </div>
 
 <script type="module" src="/src/main.js"></script>
