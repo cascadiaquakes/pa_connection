@@ -10,7 +10,7 @@ html, body {
 }
 
 #app {
-    --sidebar-width: 320px;
+    --sidebar-width: 350px;
     --resizer-width: 8px;
     display: grid;
     grid-template-columns: var(--sidebar-width) var(--resizer-width) 1fr;

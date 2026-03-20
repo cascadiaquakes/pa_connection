@@ -22,7 +22,7 @@ export function initSidebarResize({
     appId = "app",
     resizerId = "sidebarResizer",
     minWidth = 260,
-    defaultWidth = 320,
+    defaultWidth = 350,
     onResize = () => {},
 } = {}) {
     const appEl = document.getElementById(appId);
