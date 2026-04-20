@@ -1,5 +1,57 @@
 import { uniq } from "../data/normalize.js";
 
+const NODE_FILTER_SPECS = [
+    {
+        containerId: "orgCategoryFilters",
+        stateKey: "allowedOrgCategories",
+        logKey: "orgCats",
+        arrayKey: "orgTypes",
+        primaryKey: "orgTypePrimary",
+    },
+    {
+        containerId: "geoFilters",
+        stateKey: "allowedGeos",
+        logKey: "geos",
+        arrayKey: "geoTags",
+        primaryKey: "geoPrimary",
+    },
+    {
+        containerId: "nodeTypeFilters",
+        stateKey: "allowedNodeTypes",
+        logKey: "nodeTypes",
+        arrayKey: "nodeTypes",
+        primaryKey: "nodeTypePrimary",
+    },
+    {
+        containerId: "governanceFilters",
+        stateKey: "allowedGovernanceLevels",
+        logKey: "governanceLevels",
+        arrayKey: "governanceLevels",
+        primaryKey: "governanceLevelPrimary",
+    },
+    {
+        containerId: "functionalDomainFilters",
+        stateKey: "allowedFunctionalDomains",
+        logKey: "functionalDomains",
+        arrayKey: "functionalDomains",
+        primaryKey: "functionalDomainPrimary",
+    },
+    {
+        containerId: "roleFilters",
+        stateKey: "allowedRoles",
+        logKey: "roles",
+        arrayKey: "roleTags",
+        primaryKey: "rolePrimary",
+    },
+    {
+        containerId: "lifelineFilters",
+        stateKey: "allowedLifelines",
+        logKey: "lifelines",
+        arrayKey: "lifelineTags",
+        primaryKey: "femaLifelinePrimary",
+    },
+];
+
 function setAllCheckboxes(container, checked) {
     const boxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
     boxes.forEach((b) => (b.checked = checked));
@@ -62,12 +114,17 @@ function selectedFromChecklist(container) {
     return new Set(boxes.filter((b) => b.checked).map((b) => b.value));
 }
 
-function collectAllOrgTypes(cy) {
+function collectNodeValues(cy, arrayKey, primaryKey) {
     const all = [];
-    cy.nodes().forEach((n) => {
-        const v = n.data("orgTypes");
-        if (Array.isArray(v)) all.push(...v.map((x) => String(x ?? "").trim()));
-        else if (typeof v === "string" && v.trim()) all.push(v.trim()); // tolerate weirdness
+    cy.nodes("[!isGrid]").forEach((n) => {
+        const values = n.data(arrayKey);
+        if (Array.isArray(values)) {
+            all.push(...values.map((x) => String(x ?? "").trim()));
+            return;
+        }
+
+        const primary = String(n.data(primaryKey) ?? "").trim();
+        if (primary) all.push(primary);
     });
     return uniq(all.filter(Boolean));
 }
@@ -76,41 +133,54 @@ export function initControls(cy, { onChange }) {
     const nodeColorModeEl = document.getElementById("nodeColorMode");
     const edgeDisplayModeEl = document.getElementById("edgeDisplayMode");
 
-    const orgCategoryFiltersEl = document.getElementById("orgCategoryFilters");
-    const geoFiltersEl = document.getElementById("geoFilters");
     const relTypeFiltersEl = document.getElementById("relTypeFilters");
-
     const pruneToggleEl = document.getElementById("togglePrune");
     const layoutToggleEl = document.getElementById("toggleLayout");
 
-    if (!orgCategoryFiltersEl) console.warn("[controls] Missing #orgCategoryFilters");
-    if (!geoFiltersEl) console.warn("[controls] Missing #geoFilters");
+    const filterContainers = NODE_FILTER_SPECS.map((spec) => ({
+        ...spec,
+        el: document.getElementById(spec.containerId),
+    }));
+
+    for (const spec of filterContainers) {
+        if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
+    }
     if (!relTypeFiltersEl) console.warn("[controls] Missing #relTypeFilters");
     if (!pruneToggleEl) console.warn("[controls] Missing #togglePrune");
     if (!layoutToggleEl) console.warn("[controls] Missing #toggleLayout");
 
-    const orgCats = collectAllOrgTypes(cy);
-    const geos = uniq(cy.nodes().map((n) => String(n.data("geoPrimary") ?? "")));
+    const nodeFilterValues = Object.fromEntries(
+        filterContainers.map((spec) => [
+            spec.stateKey,
+            collectNodeValues(cy, spec.arrayKey, spec.primaryKey),
+        ])
+    );
     const relTypes = uniq(cy.edges().map((e) => String(e.data("relType") ?? "")));
 
-    console.log("[controls] orgCats:", orgCats.length, orgCats.slice(0, 10));
-    console.log("[controls] geos:", geos.length, geos.slice(0, 10));
+    for (const spec of filterContainers) {
+        const values = nodeFilterValues[spec.stateKey] ?? [];
+        console.log(`[controls] ${spec.logKey}:`, values.length, values.slice(0, 10));
+    }
     console.log("[controls] relTypes:", relTypes.length, relTypes.slice(0, 10));
 
     const emit = () => {
+        const nodeFilterState = Object.fromEntries(
+            filterContainers.map((spec) => [spec.stateKey, selectedFromChecklist(spec.el)])
+        );
+
         onChange({
             nodeColorMode: nodeColorModeEl?.value ?? "none",
             edgeDisplayMode: edgeDisplayModeEl?.value ?? "none",
-            allowedOrgCategories: selectedFromChecklist(orgCategoryFiltersEl),
-            allowedGeos: selectedFromChecklist(geoFiltersEl),
+            ...nodeFilterState,
             allowedRelTypes: selectedFromChecklist(relTypeFiltersEl),
             prune: pruneToggleEl?.checked ?? true,
             layoutMode: layoutToggleEl?.checked ? "organic" : "grid",
         });
     };
 
-    if (orgCategoryFiltersEl) renderChecklist(orgCategoryFiltersEl, orgCats, emit);
-    if (geoFiltersEl) renderChecklist(geoFiltersEl, geos, emit);
+    for (const spec of filterContainers) {
+        if (spec.el) renderChecklist(spec.el, nodeFilterValues[spec.stateKey] ?? [], emit);
+    }
     if (relTypeFiltersEl) renderChecklist(relTypeFiltersEl, relTypes, emit);
 
     nodeColorModeEl?.addEventListener("change", emit);
@@ -126,8 +196,9 @@ export function initControls(cy, { onChange }) {
     }
 
     function resetToFullView() {
-        setAllChecked(orgCategoryFiltersEl, true);
-        setAllChecked(geoFiltersEl, true);
+        for (const spec of filterContainers) {
+            setAllChecked(spec.el, true);
+        }
         setAllChecked(relTypeFiltersEl, true);
 
         if (pruneToggleEl) pruneToggleEl.checked = false;

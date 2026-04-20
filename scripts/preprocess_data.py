@@ -31,12 +31,12 @@ def palette_color(key):
     return f"hsl({hue}, 60%, 55%)"
 
 
-def parse_org_types(row):
-    value = row.get("orgTypes")
+def parse_json_array_field(row, field_name):
+    value = row.get(field_name)
     if isinstance(value, list):
         return value
 
-    s = clean(row.get("orgTypes_json") or row.get("orgTypes"))
+    s = clean(row.get(f"{field_name}_json") or row.get(field_name))
     if not s:
         return []
 
@@ -88,7 +88,13 @@ def build_elements_from_rows(node_rows, edge_rows):
         org_name = clean(row.get("Organization Name"))
         org_type_primary = clean(row.get("orgTypePrimary"))
         geo_primary = clean(row.get("geoPrimary"))
-        org_types = parse_org_types(row)
+        org_types = parse_json_array_field(row, "orgTypes")
+        geo_tags = parse_json_array_field(row, "geoTags")
+        node_types = parse_json_array_field(row, "nodeTypes")
+        governance_levels = parse_json_array_field(row, "governanceLevels")
+        functional_domains = parse_json_array_field(row, "functionalDomains")
+        role_tags = parse_json_array_field(row, "roleTags")
+        lifeline_tags = parse_json_array_field(row, "lifelineTags")
 
         nodes.append(
             {
@@ -99,9 +105,23 @@ def build_elements_from_rows(node_rows, edge_rows):
                     "orgTypePrimary": org_type_primary,
                     "geoPrimary": geo_primary,
                     "orgTypes": org_types,
+                    "geoTags": geo_tags,
+                    "nodeTypePrimary": clean(row.get("nodeTypePrimary")),
+                    "nodeTypes": node_types,
+                    "governanceLevelPrimary": clean(row.get("governanceLevelPrimary")),
+                    "governanceLevels": governance_levels,
+                    "functionalDomainPrimary": clean(row.get("functionalDomainPrimary")),
+                    "functionalDomains": functional_domains,
+                    "rolePrimary": clean(row.get("rolePrimary")),
+                    "roleTags": role_tags,
+                    "femaLifelinePrimary": clean(row.get("femaLifelinePrimary")),
+                    "lifelineTags": lifeline_tags,
                     "notes": clean(row.get("Notes")),
                     "primary": clean(row.get("Primary")),
                     "secondary": clean(row.get("2ndry")),
+                    "url": clean(row.get("url")),
+                    "reviewFlag": clean(row.get("review_flag")),
+                    "reviewNote": clean(row.get("review_note")),
                     "_nodeColor": palette_color(org_type_primary or geo_primary or "unknown"),
                 }
             }

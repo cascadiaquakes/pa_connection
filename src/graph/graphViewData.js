@@ -14,18 +14,48 @@ function canonicalPair(a, b) {
     return a < b ? [a, b] : [b, a];
 }
 
-function nodePassesFilters(nodeData, allowedOrgCategories, allowedGeos) {
-    const geo = String(nodeData.geoPrimary ?? "");
+function nodeValues(nodeData, arrayKey, primaryKey) {
+    const raw = nodeData[arrayKey];
+    if (Array.isArray(raw)) return raw.map((v) => String(v ?? ""));
+    return [String(nodeData[primaryKey] ?? "")];
+}
 
-    const orgTypes = nodeData.orgTypes;
-    const typesArr = Array.isArray(orgTypes)
-        ? orgTypes.map((t) => String(t ?? ""))
-        : [String(nodeData.orgTypePrimary ?? "")];
+function matchesAllowed(nodeData, allowedValues, arrayKey, primaryKey) {
+    if (!(allowedValues instanceof Set) || allowedValues.size === 0) return false;
+    return nodeValues(nodeData, arrayKey, primaryKey).some((value) => allowedValues.has(value));
+}
 
-    const okCat = typesArr.some((t) => allowedOrgCategories.has(t));
-    const okGeo = allowedGeos.has(geo);
-
-    return okCat && okGeo;
+function nodePassesFilters(
+    nodeData,
+    {
+        allowedOrgCategories,
+        allowedGeos,
+        allowedNodeTypes,
+        allowedGovernanceLevels,
+        allowedFunctionalDomains,
+        allowedRoles,
+        allowedLifelines,
+    }
+) {
+    return (
+        matchesAllowed(nodeData, allowedOrgCategories, "orgTypes", "orgTypePrimary") &&
+        matchesAllowed(nodeData, allowedGeos, "geoTags", "geoPrimary") &&
+        matchesAllowed(nodeData, allowedNodeTypes, "nodeTypes", "nodeTypePrimary") &&
+        matchesAllowed(
+            nodeData,
+            allowedGovernanceLevels,
+            "governanceLevels",
+            "governanceLevelPrimary"
+        ) &&
+        matchesAllowed(
+            nodeData,
+            allowedFunctionalDomains,
+            "functionalDomains",
+            "functionalDomainPrimary"
+        ) &&
+        matchesAllowed(nodeData, allowedRoles, "roleTags", "rolePrimary") &&
+        matchesAllowed(nodeData, allowedLifelines, "lifelineTags", "femaLifelinePrimary")
+    );
 }
 
 function edgePassesFilters(edgeData, allowedRelTypes) {
@@ -38,6 +68,11 @@ export function deriveGraphView(
     {
         allowedOrgCategories = new Set(),
         allowedGeos = new Set(),
+        allowedNodeTypes = new Set(),
+        allowedGovernanceLevels = new Set(),
+        allowedFunctionalDomains = new Set(),
+        allowedRoles = new Set(),
+        allowedLifelines = new Set(),
         allowedRelTypes = new Set(),
         prune = true,
         edgeDisplayMode = "simplified", // "simplified" | "detailed"
@@ -45,6 +80,11 @@ export function deriveGraphView(
 ) {
     allowedOrgCategories = asSet(allowedOrgCategories);
     allowedGeos = asSet(allowedGeos);
+    allowedNodeTypes = asSet(allowedNodeTypes);
+    allowedGovernanceLevels = asSet(allowedGovernanceLevels);
+    allowedFunctionalDomains = asSet(allowedFunctionalDomains);
+    allowedRoles = asSet(allowedRoles);
+    allowedLifelines = asSet(allowedLifelines);
     allowedRelTypes = asSet(allowedRelTypes);
 
     const rawNodes = rawElements.filter((el) => isNode(el) && el.data?.isGrid !== "true");
@@ -52,9 +92,15 @@ export function deriveGraphView(
     const gridElements = rawElements.filter((el) => el.data?.isGrid === "true");
 
     // 1) filter nodes
-    const keptNodes = rawNodes.filter((n) =>
-        nodePassesFilters(n.data, allowedOrgCategories, allowedGeos)
-    );
+    const keptNodes = rawNodes.filter((n) => nodePassesFilters(n.data, {
+        allowedOrgCategories,
+        allowedGeos,
+        allowedNodeTypes,
+        allowedGovernanceLevels,
+        allowedFunctionalDomains,
+        allowedRoles,
+        allowedLifelines,
+    }));
 
     const keptNodeIds = new Set(keptNodes.map((n) => String(n.data.id)));
 

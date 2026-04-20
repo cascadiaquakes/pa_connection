@@ -2,7 +2,7 @@ import { isVisible, renderCard } from "./infoRender.js";
 
 function countLabel(setOrNull, singular, plural = `${singular}s`) {
     const n = setOrNull?.size ?? 0;
-    if (n === 0) return "All";
+    if (n === 0) return "None";
     if (n === 1) return `1 ${singular}`;
     return `${n} ${plural}`;
 }
@@ -21,6 +21,16 @@ function formatNodeColorMode(mode) {
     switch (mode) {
         case "orgType":
             return "Organization type";
+        case "nodeType":
+            return "Node type";
+        case "governance":
+            return "Governance level";
+        case "functionalDomain":
+            return "Functional domain";
+        case "role":
+            return "Role";
+        case "lifeline":
+            return "FEMA lifeline";
         case "geo":
             return "Geography";
         case "none":
@@ -73,6 +83,11 @@ function summarizeGraphStatus(cy, state, staticInfo) {
     const filterRows = [
         ["Organization categories", countLabel(state.allowedOrgCategories, "category")],
         ["Geographies", countLabel(state.allowedGeos, "geography", "geographies")],
+        ["Node types", countLabel(state.allowedNodeTypes, "type")],
+        ["Governance levels", countLabel(state.allowedGovernanceLevels, "level")],
+        ["Functional domains", countLabel(state.allowedFunctionalDomains, "domain")],
+        ["Roles", countLabel(state.allowedRoles, "role")],
+        ["FEMA lifelines", countLabel(state.allowedLifelines, "lifeline")],
         ["Relationship types", countLabel(state.allowedRelTypes, "type")],
     ];
 

@@ -91,6 +91,11 @@ function showFatal(err) {
                     edgeDisplayMode,
                     allowedOrgCategories,
                     allowedGeos,
+                    allowedNodeTypes,
+                    allowedGovernanceLevels,
+                    allowedFunctionalDomains,
+                    allowedRoles,
+                    allowedLifelines,
                     allowedRelTypes,
                     prune,
                     layoutMode
@@ -100,6 +105,11 @@ function showFatal(err) {
                 applyView(cy, {
                     allowedOrgCategories,
                     allowedGeos,
+                    allowedNodeTypes,
+                    allowedGovernanceLevels,
+                    allowedFunctionalDomains,
+                    allowedRoles,
+                    allowedLifelines,
                     allowedRelTypes,
                     prune,
                     nodeColorMode,

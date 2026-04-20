@@ -1,14 +1,23 @@
 import { displayValue, isVisible, renderCard } from "./infoRender.js";
 
+function arrayOrPrimary(d, arrayKey, primaryKey) {
+    if (Array.isArray(d[arrayKey])) return d[arrayKey];
+    return d[primaryKey] ? [d[primaryKey]] : [];
+}
+
 function summarizeNode(n) {
     const d = n.data();
 
     const orgName = d.orgName ?? d.name ?? d.label ?? d.id ?? n.id();
     const shortLabel = d.label ?? d.id ?? n.id();
 
-    const orgTypes = Array.isArray(d.orgTypes)
-        ? d.orgTypes
-        : (d.orgTypePrimary ? [d.orgTypePrimary] : []);
+    const orgTypes = arrayOrPrimary(d, "orgTypes", "orgTypePrimary");
+    const nodeTypes = arrayOrPrimary(d, "nodeTypes", "nodeTypePrimary");
+    const geographies = arrayOrPrimary(d, "geoTags", "geoPrimary");
+    const governanceLevels = arrayOrPrimary(d, "governanceLevels", "governanceLevelPrimary");
+    const functionalDomains = arrayOrPrimary(d, "functionalDomains", "functionalDomainPrimary");
+    const roles = arrayOrPrimary(d, "roleTags", "rolePrimary");
+    const lifelines = arrayOrPrimary(d, "lifelineTags", "femaLifelinePrimary");
 
     const primaryContact =
         d.primary && String(d.primary).trim().length > 0
@@ -18,10 +27,18 @@ function summarizeNode(n) {
     const detailsRows = [
         ["Organization", orgName],
         ["Code", shortLabel !== orgName ? shortLabel : ""],
-        ["Geography", d.geoPrimary],
+        ["Node type", nodeTypes],
         ["Organization types", orgTypes],
+        ["Geography", geographies],
+        ["Governance level", governanceLevels],
+        ["Functional domains", functionalDomains],
+        ["Roles", roles],
+        ["FEMA lifelines", lifelines],
+        ["Website", d.url],
         ["Primary contact", primaryContact],
         ["Secondary contact", d.secondary],
+        ["Review flag", d.reviewFlag],
+        ["Review note", d.reviewNote],
         ["Notes", d.notes],
     ];
 
@@ -49,11 +66,25 @@ function summarizeNode(n) {
         "name",
         "orgName",
         "geoPrimary",
+        "geoTags",
         "orgTypePrimary",
         "orgTypes",
+        "nodeTypePrimary",
+        "nodeTypes",
+        "governanceLevelPrimary",
+        "governanceLevels",
+        "functionalDomainPrimary",
+        "functionalDomains",
+        "rolePrimary",
+        "roleTags",
+        "femaLifelinePrimary",
+        "lifelineTags",
         "primary",
         "secondary",
         "notes",
+        "url",
+        "reviewFlag",
+        "reviewNote",
     ]);
 
     const extraRows = Object.keys(d)

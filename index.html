@@ -104,6 +104,11 @@
                         <span>Nodes</span>
                         <select id="nodeColorMode">
                             <option value="orgCat">Organization Category</option>
+                            <option value="nodeType">Node Type</option>
+                            <option value="governance">Governance Level</option>
+                            <option value="functionalDomain">Functional Domain</option>
+                            <option value="role">Role</option>
+                            <option value="lifeline">FEMA Lifeline</option>
                             <option value="geo">Geographic Area</option>
                             <option value="none">None</option>
                         </select>
@@ -127,6 +132,21 @@
 
                     <div class="hint" style="margin-top: 10px;">Geographic Area</div>
                     <div id="geoFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Node Type</div>
+                    <div id="nodeTypeFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Governance Level</div>
+                    <div id="governanceFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Functional Domain</div>
+                    <div id="functionalDomainFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Role</div>
+                    <div id="roleFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">FEMA Lifeline</div>
+                    <div id="lifelineFilters" class="checklist"></div>
                 </section>
 
                 <!-- Edge Filters -->
@@ -196,7 +216,7 @@
                     <h3>Search organizations</h3>
 
                     <label class="row" for="searchInput" style="display:block;">
-                        <span class="hint">Search across name, ID, type, geography, notes, and contacts</span>
+                        <span class="hint">Search across name, ID, categories, geography, roles, notes, review flags, and contacts</span>
                         <input
                                 id="searchInput"
                                 type="text"

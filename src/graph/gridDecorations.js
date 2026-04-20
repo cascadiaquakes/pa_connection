@@ -229,6 +229,8 @@ export function updateGridHeaderColors(cy, nodeColorMode) {
         return;
     }
 
+    if (!["orgTypePrimary", "geoPrimary"].includes(spec.dataKey)) return;
+
     const colors = spec.colors ?? {};
     const fallback = spec.fallbackColor ?? "#9E9E9E";
 

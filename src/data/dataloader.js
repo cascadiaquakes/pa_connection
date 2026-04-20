@@ -132,6 +132,16 @@ function parseMaybeJSONArray(s) {
     }
 }
 
+const NODE_JSON_ARRAY_FIELDS = [
+    "orgTypes",
+    "geoTags",
+    "nodeTypes",
+    "governanceLevels",
+    "functionalDomains",
+    "roleTags",
+    "lifelineTags",
+];
+
 // -------- public API --------
 export async function loadCsvRows({
     nodesUrl = "/data/organizations_clean.csv",
@@ -148,11 +158,12 @@ export async function loadCsvRows({
     L.log("nodeRows:", nodeRows.length, nodeRows[0] ? Object.keys(nodeRows[0]) : "(none)");
     L.log("edgeRows:", edgeRows.length, edgeRows[0] ? Object.keys(edgeRows[0]) : "(none)");
 
-    // Convenience: decode orgTypes_json -> orgTypes array
-    // (Keeps orgTypePrimary for layout/styling; orgTypes for filtering)
     for (const n of nodeRows) {
-        if ("orgTypes_json" in n && !("orgTypes" in n)) {
-            n.orgTypes = parseMaybeJSONArray(n.orgTypes_json);
+        for (const fieldName of NODE_JSON_ARRAY_FIELDS) {
+            const jsonKey = `${fieldName}_json`;
+            if (jsonKey in n && !(fieldName in n)) {
+                n[fieldName] = parseMaybeJSONArray(n[jsonKey]);
+            }
         }
     }
 
