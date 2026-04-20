@@ -97,10 +97,13 @@ export function gridDecorationStyles() {
                 "text-valign": "center",
                 "text-halign": "center",
 
-                "background-opacity": 0,
+                "background-color": "#d9dde3",
+                "background-opacity": 0.45,
                 "border-width": 0,
 
-                color: "#333",
+                color: "#222",
+                "text-outline-width": 0,
+                "text-outline-color": "transparent",
                 "z-index": 0,
                 "events": "yes",
                 "text-events": "yes",

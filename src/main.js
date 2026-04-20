@@ -6,19 +6,20 @@ import {
     runLayout,
     applyView
 } from "./graph/graphBuilder.js";
-import {initControls} from "./ui/controls.js";
+import {initControls, NODE_SELECTION_SPECS} from "./ui/controls.js";
 import {initSidebarTabs} from "./ui/tabs.js";
 import {applyBoxPresetLayout} from "./graph/boxLayout.js";
 import {addGridDecorations, updateGridHeaderColors, initGridHeaderInteractions} from "./graph/gridDecorations.js";
 import {initGraphInfo, updateGraphInfo} from "./info/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
-import {initSelectionHighlight} from "./graph/selectionHighlight.js";
+import {applySelectionBuckets, initSelectionHighlight} from "./graph/selectionHighlight.js";
 import {initSelectionInfo} from "./info/selectionInfo.js";
 import { showTooltip, hideTooltip } from "./graph/tooltips.js";
 import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
 import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
 import { initSidebarResize } from "./ui/sidebarResize.js";
+import { updateNodeColorLegend } from "./ui/colorLegend.js";
 
 
 function showFatal(err) {
@@ -73,7 +74,7 @@ function showFatal(err) {
         addGridDecorations(cy);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         applyBoxPresetLayout(cy);
-        initSidebarTabs({defaultTab: "settings"});
+        initSidebarTabs({defaultTab: "filters"});
         initGraphInfo({
             totalNodes: nodes.length,
             totalEdges: edges.length,
@@ -84,6 +85,7 @@ function showFatal(err) {
         initSelectionHighlight(cy);
         initSearchTab(cy);
         initExportTab(cy);
+        updateNodeColorLegend(cy, "orgCat");
         const controls = initControls(cy, {
             onChange: (state) => {
                 const {
@@ -96,6 +98,13 @@ function showFatal(err) {
                     allowedFunctionalDomains,
                     allowedRoles,
                     allowedLifelines,
+                    selectedOrgCategories,
+                    selectedGeos,
+                    selectedNodeTypes,
+                    selectedGovernanceLevels,
+                    selectedFunctionalDomains,
+                    selectedRoles,
+                    selectedLifelines,
                     allowedRelTypes,
                     prune,
                     layoutMode
@@ -117,8 +126,18 @@ function showFatal(err) {
                     layoutMode
                 });
                 setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
+                applySelectionBuckets(cy, NODE_SELECTION_SPECS, {
+                    selectedOrgCategories,
+                    selectedGeos,
+                    selectedNodeTypes,
+                    selectedGovernanceLevels,
+                    selectedFunctionalDomains,
+                    selectedRoles,
+                    selectedLifelines,
+                });
                 runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
                 updateGridHeaderColors(cy, nodeColorMode);
+                updateNodeColorLegend(cy, nodeColorMode);
                 updateGraphInfo(cy, state);
             },
         });

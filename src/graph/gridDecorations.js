@@ -229,7 +229,10 @@ export function updateGridHeaderColors(cy, nodeColorMode) {
         return;
     }
 
-    if (!["orgTypePrimary", "geoPrimary"].includes(spec.dataKey)) return;
+    let targetAxis = null;
+    if (spec.dataKey === "orgTypePrimary") targetAxis = "col";
+    if (spec.dataKey === "geoPrimary") targetAxis = "row";
+    if (!targetAxis) return;
 
     const colors = spec.colors ?? {};
     const fallback = spec.fallbackColor ?? "#9E9E9E";
@@ -237,6 +240,8 @@ export function updateGridHeaderColors(cy, nodeColorMode) {
     let colored = 0;
 
     headers.forEach((n) => {
+        if (String(n.data("gridAxis") ?? "") !== targetAxis) return;
+
         const txt = headerText(n);
         if (!txt) return;
 

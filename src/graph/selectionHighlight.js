@@ -56,6 +56,36 @@ export function initSelectionHighlight(cy) {
     apply();
 }
 
+function nodeMatchesValue(n, arrayKey, primaryKey, value) {
+    const values = n.data(arrayKey);
+    if (Array.isArray(values)) {
+        return values.map((v) => String(v ?? "")).includes(String(value));
+    }
+    return String(n.data(primaryKey) ?? "") === String(value);
+}
+
+export function applySelectionBuckets(cy, selectionSpecs = [], selectionState = {}) {
+    const selectedNodes = cy.nodes("[!isGrid]").filter((n) => {
+        if (n.style("display") === "none") return false;
+
+        return selectionSpecs.some((spec) => {
+            const selectedValues = selectionState[spec.stateKey];
+            if (!(selectedValues instanceof Set) || selectedValues.size === 0) return false;
+
+            return Array.from(selectedValues).some((value) =>
+                nodeMatchesValue(n, spec.arrayKey, spec.primaryKey, value)
+            );
+        });
+    });
+
+    cy.batch(() => {
+        cy.elements(":selected").unselect();
+        if (selectedNodes.length > 0) selectedNodes.select();
+    });
+
+    return selectedNodes;
+}
+
 /**
  * Return visible, non-grid nodes belonging to a row/column bucket.
  *

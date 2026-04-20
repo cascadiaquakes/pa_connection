@@ -52,12 +52,64 @@ const NODE_FILTER_SPECS = [
     },
 ];
 
+export const NODE_SELECTION_SPECS = [
+    {
+        containerId: "selectionOrgCategoryFilters",
+        stateKey: "selectedOrgCategories",
+        logKey: "selectionOrgCats",
+        arrayKey: "orgTypes",
+        primaryKey: "orgTypePrimary",
+    },
+    {
+        containerId: "selectionGeoFilters",
+        stateKey: "selectedGeos",
+        logKey: "selectionGeos",
+        arrayKey: "geoTags",
+        primaryKey: "geoPrimary",
+    },
+    {
+        containerId: "selectionNodeTypeFilters",
+        stateKey: "selectedNodeTypes",
+        logKey: "selectionNodeTypes",
+        arrayKey: "nodeTypes",
+        primaryKey: "nodeTypePrimary",
+    },
+    {
+        containerId: "selectionGovernanceFilters",
+        stateKey: "selectedGovernanceLevels",
+        logKey: "selectionGovernanceLevels",
+        arrayKey: "governanceLevels",
+        primaryKey: "governanceLevelPrimary",
+    },
+    {
+        containerId: "selectionFunctionalDomainFilters",
+        stateKey: "selectedFunctionalDomains",
+        logKey: "selectionFunctionalDomains",
+        arrayKey: "functionalDomains",
+        primaryKey: "functionalDomainPrimary",
+    },
+    {
+        containerId: "selectionRoleFilters",
+        stateKey: "selectedRoles",
+        logKey: "selectionRoles",
+        arrayKey: "roleTags",
+        primaryKey: "rolePrimary",
+    },
+    {
+        containerId: "selectionLifelineFilters",
+        stateKey: "selectedLifelines",
+        logKey: "selectionLifelines",
+        arrayKey: "lifelineTags",
+        primaryKey: "femaLifelinePrimary",
+    },
+];
+
 function setAllCheckboxes(container, checked) {
     const boxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
     boxes.forEach((b) => (b.checked = checked));
 }
 
-function renderChecklist(container, values, onChange) {
+function renderChecklist(container, values, onChange, { checkedByDefault = true } = {}) {
     container.innerHTML = "";
 
     // --- Controls row (All / None) ---
@@ -94,7 +146,7 @@ function renderChecklist(container, values, onChange) {
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.value = v;
-        cb.checked = true;
+        cb.checked = checkedByDefault;
         cb.addEventListener("change", onChange);
 
         const span = document.createElement("span");
@@ -141,8 +193,15 @@ export function initControls(cy, { onChange }) {
         ...spec,
         el: document.getElementById(spec.containerId),
     }));
+    const selectionContainers = NODE_SELECTION_SPECS.map((spec) => ({
+        ...spec,
+        el: document.getElementById(spec.containerId),
+    }));
 
     for (const spec of filterContainers) {
+        if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
+    }
+    for (const spec of selectionContainers) {
         if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
     }
     if (!relTypeFiltersEl) console.warn("[controls] Missing #relTypeFilters");
@@ -155,10 +214,20 @@ export function initControls(cy, { onChange }) {
             collectNodeValues(cy, spec.arrayKey, spec.primaryKey),
         ])
     );
+    const nodeSelectionValues = Object.fromEntries(
+        selectionContainers.map((spec) => [
+            spec.stateKey,
+            collectNodeValues(cy, spec.arrayKey, spec.primaryKey),
+        ])
+    );
     const relTypes = uniq(cy.edges().map((e) => String(e.data("relType") ?? "")));
 
     for (const spec of filterContainers) {
         const values = nodeFilterValues[spec.stateKey] ?? [];
+        console.log(`[controls] ${spec.logKey}:`, values.length, values.slice(0, 10));
+    }
+    for (const spec of selectionContainers) {
+        const values = nodeSelectionValues[spec.stateKey] ?? [];
         console.log(`[controls] ${spec.logKey}:`, values.length, values.slice(0, 10));
     }
     console.log("[controls] relTypes:", relTypes.length, relTypes.slice(0, 10));
@@ -167,11 +236,15 @@ export function initControls(cy, { onChange }) {
         const nodeFilterState = Object.fromEntries(
             filterContainers.map((spec) => [spec.stateKey, selectedFromChecklist(spec.el)])
         );
+        const nodeSelectionState = Object.fromEntries(
+            selectionContainers.map((spec) => [spec.stateKey, selectedFromChecklist(spec.el)])
+        );
 
         onChange({
             nodeColorMode: nodeColorModeEl?.value ?? "none",
             edgeDisplayMode: edgeDisplayModeEl?.value ?? "none",
             ...nodeFilterState,
+            ...nodeSelectionState,
             allowedRelTypes: selectedFromChecklist(relTypeFiltersEl),
             prune: pruneToggleEl?.checked ?? true,
             layoutMode: layoutToggleEl?.checked ? "organic" : "grid",
@@ -180,6 +253,13 @@ export function initControls(cy, { onChange }) {
 
     for (const spec of filterContainers) {
         if (spec.el) renderChecklist(spec.el, nodeFilterValues[spec.stateKey] ?? [], emit);
+    }
+    for (const spec of selectionContainers) {
+        if (spec.el) {
+            renderChecklist(spec.el, nodeSelectionValues[spec.stateKey] ?? [], emit, {
+                checkedByDefault: false,
+            });
+        }
     }
     if (relTypeFiltersEl) renderChecklist(relTypeFiltersEl, relTypes, emit);
 
@@ -198,6 +278,9 @@ export function initControls(cy, { onChange }) {
     function resetToFullView() {
         for (const spec of filterContainers) {
             setAllChecked(spec.el, true);
+        }
+        for (const spec of selectionContainers) {
+            setAllChecked(spec.el, false);
         }
         setAllChecked(relTypeFiltersEl, true);
 

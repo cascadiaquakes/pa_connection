@@ -48,12 +48,23 @@
             <button
                     type="button"
                     class="tab active"
-                    id="tabSettings"
+                    id="tabFilters"
                     role="tab"
                     aria-selected="true"
-                    aria-controls="panelSettings"
+                    aria-controls="panelFilters"
             >
-                Settings
+                Filters
+            </button>
+
+            <button
+                    type="button"
+                    class="tab"
+                    id="tabControls"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panelControls"
+            >
+                Controls
             </button>
 
             <button
@@ -93,37 +104,10 @@
             <!-- SETTINGS -->
             <div
                     class="tab-panel active"
-                    id="panelSettings"
+                    id="panelFilters"
                     role="tabpanel"
-                    aria-labelledby="tabSettings"
+                    aria-labelledby="tabFilters"
             >
-                <section class="panel">
-                    <h3>Coloring</h3>
-
-                    <label class="row">
-                        <span>Nodes</span>
-                        <select id="nodeColorMode">
-                            <option value="orgCat">Organization Category</option>
-                            <option value="nodeType">Node Type</option>
-                            <option value="governance">Governance Level</option>
-                            <option value="functionalDomain">Functional Domain</option>
-                            <option value="role">Role</option>
-                            <option value="lifeline">FEMA Lifeline</option>
-                            <option value="geo">Geographic Area</option>
-                            <option value="none">None</option>
-                        </select>
-                    </label>
-
-                    <label class="row">
-                        <span>Edges</span>
-                        <select id="edgeDisplayMode">
-                            <option value="simplified">Simplified</option>
-                            <option value="detailed">Detailed</option>
-                        </select>
-                    </label>
-                </section>
-
-                <!-- Node Filters -->
                 <section class="panel">
                     <h3>Node filters</h3>
 
@@ -149,12 +133,72 @@
                     <div id="lifelineFilters" class="checklist"></div>
                 </section>
 
-                <!-- Edge Filters -->
                 <section class="panel">
                     <h3>Edge filters</h3>
 
                     <div class="hint">Relationship type</div>
                     <div id="relTypeFilters" class="checklist"></div>
+                </section>
+            </div>
+
+            <div
+                    class="tab-panel"
+                    id="panelControls"
+                    role="tabpanel"
+                    aria-labelledby="tabControls"
+                    hidden
+            >
+                <section class="panel">
+                    <h3>Coloring</h3>
+
+                    <label class="row">
+                        <span>Nodes</span>
+                        <select id="nodeColorMode">
+                            <option value="orgCat">Organization Category</option>
+                            <option value="nodeType">Node Type</option>
+                            <option value="governance">Governance Level</option>
+                            <option value="functionalDomain">Functional Domain</option>
+                            <option value="role">Role</option>
+                            <option value="lifeline">FEMA Lifeline</option>
+                            <option value="geo">Geographic Area</option>
+                            <option value="none">None</option>
+                        </select>
+                    </label>
+
+                    <div id="nodeColorLegend" class="color-legend" hidden></div>
+
+                    <label class="row">
+                        <span>Edges</span>
+                        <select id="edgeDisplayMode">
+                            <option value="simplified">Simplified</option>
+                            <option value="detailed">Detailed</option>
+                        </select>
+                    </label>
+                </section>
+
+                <section class="panel">
+                    <h3>Selection</h3>
+
+                    <div class="hint">Organization Category</div>
+                    <div id="selectionOrgCategoryFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Geographic Area</div>
+                    <div id="selectionGeoFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Node Type</div>
+                    <div id="selectionNodeTypeFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Governance Level</div>
+                    <div id="selectionGovernanceFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Functional Domain</div>
+                    <div id="selectionFunctionalDomainFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">Role</div>
+                    <div id="selectionRoleFilters" class="checklist"></div>
+
+                    <div class="hint" style="margin-top: 10px;">FEMA Lifeline</div>
+                    <div id="selectionLifelineFilters" class="checklist"></div>
                 </section>
 
                 <section class="panel">
