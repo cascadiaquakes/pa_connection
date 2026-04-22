@@ -150,9 +150,9 @@ function applyNodeSizing(cy, { layoutMode } = {}) {
     if (layoutMode === "grid" || layoutMode === "boxes") {
         realNodes.forEach((n) => {
             n.style({
-                width: 28,
-                height: 28,
-                "font-size": 10,
+                width: layoutConfig.nodeSize ?? 28,
+                height: layoutConfig.nodeSize ?? 28,
+                "font-size": layoutConfig.nodeFontSize ?? 10,
             });
         });
         return;

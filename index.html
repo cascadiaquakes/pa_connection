@@ -48,25 +48,23 @@
             <button
                     type="button"
                     class="tab active"
-                    id="tabFilters"
-                    role="tab"
-                    aria-selected="true"
-                    aria-controls="panelFilters"
-            >
-                Filters
-            </button>
-
-            <button
-                    type="button"
-                    class="tab"
                     id="tabControls"
                     role="tab"
-                    aria-selected="false"
+                    aria-selected="true"
                     aria-controls="panelControls"
             >
                 Controls
             </button>
-
+            <button
+                    type="button"
+                    class="tab"
+                    id="tabFilters"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panelFilters"
+            >
+                Filters
+            </button>
             <button
                     type="button"
                     class="tab"
@@ -175,7 +173,20 @@
                         </select>
                     </label>
                 </section>
+                <section class="panel">
+                    <h3>Graph</h3>
 
+                    <label class="switch">
+                        <input type="checkbox" id="togglePrune"/>
+                        <span class="slider" aria-hidden="true"></span>
+                        <span class="switch-label">Prune isolated nodes</span>
+                    </label>
+                    <label class="switch">
+                        <input type="checkbox" id="toggleLayout"/>
+                        <span class="slider" aria-hidden="true"></span>
+                        <span class="switch-label">Self Organizing Layout</span>
+                    </label>
+                </section>
                 <section class="panel">
                     <h3>Selection</h3>
 
@@ -199,21 +210,6 @@
 
                     <div class="hint" style="margin-top: 10px;">FEMA Lifeline</div>
                     <div id="selectionLifelineFilters" class="checklist"></div>
-                </section>
-
-                <section class="panel">
-                    <h3>Graph</h3>
-
-                    <label class="switch">
-                        <input type="checkbox" id="togglePrune" checked />
-                        <span class="slider" aria-hidden="true"></span>
-                        <span class="switch-label">Prune isolated nodes</span>
-                    </label>
-                    <label class="switch">
-                        <input type="checkbox" id="toggleLayout"/>
-                        <span class="slider" aria-hidden="true"></span>
-                        <span class="switch-label">Self Organizing Layout</span>
-                    </label>
                 </section>
             </div>
 

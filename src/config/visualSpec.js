@@ -141,7 +141,6 @@ export const visualSpec = {
             order: [
                 "International",
                 "Canada",
-                "U.S. Federal",
                 "U.S. National",
                 "PNW Regional",
                 "British Columbia",

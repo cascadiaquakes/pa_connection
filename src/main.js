@@ -74,7 +74,7 @@ function showFatal(err) {
         addGridDecorations(cy);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         applyBoxPresetLayout(cy);
-        initSidebarTabs({defaultTab: "filters"});
+        initSidebarTabs({defaultTab: "controls"});
         initGraphInfo({
             totalNodes: nodes.length,
             totalEdges: edges.length,

@@ -1,5 +1,5 @@
 export function initSidebarTabs({
-    defaultTab = "filters",
+    defaultTab = "controls",
 } = {}) {
     const tabIds = ["filters", "controls", "info", "export", "search"];
 
