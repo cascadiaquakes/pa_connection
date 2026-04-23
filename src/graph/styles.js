@@ -6,7 +6,7 @@ export function baseStylesheet() {
                 "background-color": "#888",
                 label: "data(label)",
 
-                shape: "round-rectangle",
+                shape: "ellipse",
 
                 "font-size": 10,
                 color: "#111",
@@ -21,6 +21,32 @@ export function baseStylesheet() {
                 // smooth focus transitions
                 "transition-property": "opacity, border-width, text-opacity",
                 "transition-duration": "150ms",
+            },
+        },
+        {
+            selector: 'node[!isGrid][nodeTypePrimary = "Organization"], node[!isGrid][nodeType = "Organization"]',
+            style: {
+                shape: "round-rectangle",
+            },
+        },
+        {
+            selector: 'node[!isGrid][nodeTypePrimary = "Hub"], node[!isGrid][nodeType = "Hub"]',
+            style: {
+                shape: "hexagon",
+            },
+        },
+        {
+            selector: 'node[!isGrid][nodeTypePrimary = "Program"], node[!isGrid][nodeType = "Program"]',
+            style: {
+                shape: "diamond",
+            },
+        },
+        {
+            selector: "node[!isGrid][!nodeTypePrimary][!nodeType]",
+            style: {
+                shape: "ellipse",
+                width: 32,
+                height: 32,
             },
         },
         {

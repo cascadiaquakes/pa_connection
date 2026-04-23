@@ -4,7 +4,7 @@ export const layoutConfig = {
     // Overall grid footprint in Cytoscape coordinates.
     // Increase `x1` to give every category column more width.
     // Increase `y1` only if you want more top/bottom room before scrolling.
-    bounds: { x0: 120, y0: 120, x1: 1600, y1: 780 },
+    bounds: { x0: 120, y0: 120, x1: 2000, y1: 780 },
     // When true, the grid layout resets the viewport so the full grid fits on screen.
     // Turn this off if you prefer a fixed 1:1 zoom with manual scrolling/panning.
     fitToViewport: true,
@@ -32,7 +32,7 @@ export const layoutConfig = {
 
         // Hard minimum slot width used when a box is narrow.
         // Lower this carefully: too small and nodes/labels will start to collide.
-        minCellW: 32,
+        minCellW: 48,
 
         // Vertical spacing per node slot. This directly affects computed row height.
         targetCellH: 52,
