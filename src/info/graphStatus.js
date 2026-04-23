@@ -108,10 +108,12 @@ export function initGraphInfo({
                                   nodesUrl = "",
                                   edgesUrl = "",
                                   statusElId = "infoStatus",
+                                  modalStatusElId = "infoModalStatus",
                               } = {}) {
     const el = document.getElementById(statusElId);
-    if (!el) {
-        console.warn(`[graphInfo] #${statusElId} not found; skipping initGraphInfo()`);
+    const modalEl = document.getElementById(modalStatusElId);
+    if (!el || !modalEl) {
+        console.warn("[graphInfo] Missing graph info elements; skipping initGraphInfo()");
         return;
     }
 
@@ -119,8 +121,21 @@ export function initGraphInfo({
     el.dataset.totalEdges = String(totalEdges);
     if (nodesUrl) el.dataset.nodesUrl = nodesUrl;
     if (edgesUrl) el.dataset.edgesUrl = edgesUrl;
+    modalEl.dataset.totalNodes = String(totalNodes);
+    modalEl.dataset.totalEdges = String(totalEdges);
+    if (nodesUrl) modalEl.dataset.nodesUrl = nodesUrl;
+    if (edgesUrl) modalEl.dataset.edgesUrl = edgesUrl;
 
     el.innerHTML = `
+      <div class="md-status md-status-compact">
+        ${renderCard("Dataset", [
+        ["Organizations", totalNodes],
+        ["Relationships", totalEdges],
+    ])}
+      </div>
+    `;
+
+    modalEl.innerHTML = `
       <div class="md-status">
         ${renderCard("Dataset", [
         ["Organizations loaded", totalNodes],
@@ -131,7 +146,7 @@ export function initGraphInfo({
             ? renderCard("Source files", [
                 ["Nodes file", nodesUrl],
                 ["Edges file", edgesUrl],
-            ])
+            ], { linkifyValues: true })
             : ""
     }
       </div>
@@ -143,7 +158,8 @@ export function initGraphInfo({
  */
 export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = {}) {
     const el = document.getElementById(statusElId);
-    if (!el) return;
+    const modalEl = document.getElementById("infoModalStatus");
+    if (!el || !modalEl) return;
 
     const staticInfo = {
         totalNodes: el.dataset.totalNodes,
@@ -156,11 +172,22 @@ export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = 
         summarizeGraphStatus(cy, state, staticInfo);
 
     el.innerHTML = `
+      <div class="md-status md-status-compact">
+        ${renderCard("Overview", [
+        ["Visible organizations", overviewRows[2][1]],
+        ["Visible relationships", overviewRows[3][1]],
+        ["Layout", displayRows[0][1]],
+        ["Node coloring", displayRows[1][1]],
+    ])}
+      </div>
+    `;
+
+    modalEl.innerHTML = `
       <div class="md-status">
         ${renderCard("Graph overview", overviewRows)}
         ${renderCard("Display", displayRows)}
         ${renderCard("Filters", filterRows)}
-        ${sourceRows.length ? renderCard("Source files", sourceRows) : ""}
+        ${sourceRows.length ? renderCard("Source files", sourceRows, { linkifyValues: true }) : ""}
       </div>
     `;
 }

@@ -8,6 +8,10 @@ export function escapeHtml(s) {
     }[c]));
 }
 
+export function escapeHtmlAttr(s) {
+    return escapeHtml(s);
+}
+
 export function isVisible(ele) {
     return ele.style("display") !== "none";
 }
@@ -22,7 +26,24 @@ export function nonEmptyRows(rows) {
     return rows.filter(([, v]) => displayValue(v) !== "");
 }
 
-export function kvTable(rows) {
+function linkifyText(text) {
+    const escaped = escapeHtml(text);
+    return escaped.replace(
+        /(https?:\/\/[^\s<]+)/gi,
+        (url) => `<a href="${escapeHtmlAttr(url)}" target="_blank" rel="noreferrer">${url}</a>`
+    );
+}
+
+function renderValueCell(value, { linkifyValues = false } = {}) {
+    if (value && typeof value === "object" && "html" in value) {
+        return String(value.html ?? "");
+    }
+
+    const text = displayValue(value);
+    return linkifyValues ? linkifyText(text) : escapeHtml(text);
+}
+
+export function kvTable(rows, options = {}) {
     const cleanRows = nonEmptyRows(rows);
 
     return `
@@ -31,7 +52,7 @@ export function kvTable(rows) {
         ${cleanRows.map(([k, v]) => `
             <tr>
               <td class="md-k">${escapeHtml(k)}</td>
-              <td class="md-v">${escapeHtml(displayValue(v))}</td>
+              <td class="md-v">${renderValueCell(v, options)}</td>
             </tr>
           `).join("")}
       </tbody>
@@ -39,14 +60,14 @@ export function kvTable(rows) {
   `;
 }
 
-export function renderCard(title, rows) {
+export function renderCard(title, rows, options = {}) {
     const cleanRows = nonEmptyRows(rows);
     if (!cleanRows.length) return "";
 
     return `
     <section class="md-card">
       <div class="md-card-title">${escapeHtml(title)}</div>
-      ${kvTable(cleanRows)}
+      ${kvTable(cleanRows, options)}
     </section>
   `;
 }

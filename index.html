@@ -38,7 +38,7 @@
             </a>
         </div>
         <div class="app-header-title">P&amp;A Connections Viewer</div>
-        <div class="app-header-meta" aria-label="Release status">Prototype version 1</div>
+        <div class="app-header-meta" aria-label="Release status">Prototype version 2</div>
     </header>
 
     <div id="app">
@@ -222,12 +222,15 @@
                     hidden
             >
                 <section class="panel">
-                    <h3>Selection</h3>
-                    <div id="infoSelection"></div>
+                    <div class="panel-head">
+                        <h3>Selection</h3>
+                        <button id="btnInfoSeeAll" type="button" class="button-secondary">See all</button>
+                    </div>
+                    <div id="infoSelection" class="info-preview"></div>
                 </section>
                 <section class="panel">
                     <h3>Graph stats</h3>
-                    <div id="infoStatus"></div>
+                    <div id="infoStatus" class="info-preview"></div>
                 </section>
 
             </div>
@@ -284,6 +287,34 @@
         <main class="main">
             <div id="cy" class="cy"></div>
         </main>
+    </div>
+</div>
+
+<div id="infoModal" class="info-modal" hidden>
+    <div id="infoModalBackdrop" class="info-modal-backdrop"></div>
+    <div
+            class="info-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="infoModalTitle"
+    >
+        <div class="info-modal-header">
+            <div>
+                <div class="info-modal-eyebrow">Details</div>
+                <h2 id="infoModalTitle">Selection details</h2>
+            </div>
+            <button id="btnInfoModalClose" type="button" class="button-secondary">Close</button>
+        </div>
+        <div class="info-modal-body">
+            <section class="panel">
+                <h3>Selection</h3>
+                <div id="infoModalSelection"></div>
+            </section>
+            <section class="panel">
+                <h3>Graph stats</h3>
+                <div id="infoModalStatus"></div>
+            </section>
+        </div>
     </div>
 </div>
 

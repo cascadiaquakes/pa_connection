@@ -20,6 +20,7 @@ import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
 import { initSidebarResize } from "./ui/sidebarResize.js";
 import { updateNodeColorLegend } from "./ui/colorLegend.js";
+import { initInfoModal } from "./ui/infoModal.js";
 
 
 function showFatal(err) {
@@ -74,7 +75,8 @@ function showFatal(err) {
         addGridDecorations(cy);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         applyBoxPresetLayout(cy);
-        initSidebarTabs({defaultTab: "controls"});
+        const sidebarTabs = initSidebarTabs({defaultTab: "controls"});
+        initInfoModal();
         initGraphInfo({
             totalNodes: nodes.length,
             totalEdges: edges.length,
@@ -83,6 +85,9 @@ function showFatal(err) {
         });
         initSelectionInfo(cy);
         initSelectionHighlight(cy);
+        cy.on("tap", 'node[isGrid != "true"], edge', () => {
+            sidebarTabs.activate("info");
+        });
         initSearchTab(cy);
         initExportTab(cy);
         updateNodeColorLegend(cy, "orgCat");

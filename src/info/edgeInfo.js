@@ -140,11 +140,11 @@ export function renderEdgeInfo(e) {
 
         return `
         <div class="md-status">
-          ${renderCard("Relationship summary", summaryRows)}
+          ${renderCard("Relationship summary", summaryRows, { linkifyValues: true })}
           ${renderDirectionCard(sourceName, targetName, forward)}
           ${reverse.length ? renderDirectionCard(targetName, sourceName, reverse) : ""}
           ${renderCard("Graph stats", statsRows)}
-          ${extraRows.length ? renderCard("Other attributes", extraRows) : ""}
+          ${extraRows.length ? renderCard("Other attributes", extraRows, { linkifyValues: true }) : ""}
         </div>
       `;
     }
@@ -153,9 +153,34 @@ export function renderEdgeInfo(e) {
 
     return `
     <div class="md-status">
-      ${renderCard("Relationship", detailsRows)}
+      ${renderCard("Relationship", detailsRows, { linkifyValues: true })}
       ${renderCard("Graph stats", statsRows)}
-      ${extraRows.length ? renderCard("Other attributes", extraRows) : ""}
+      ${extraRows.length ? renderCard("Other attributes", extraRows, { linkifyValues: true }) : ""}
+    </div>
+  `;
+}
+
+export function renderEdgeSummary(e) {
+    const d = e.data();
+    const isAggregated = d.isAggregated === "true";
+
+    if (isAggregated) {
+        const { summaryRows, statsRows } = summarizeAggregatedEdge(e);
+
+        return `
+        <div class="md-status md-status-compact">
+          ${renderCard("Relationship summary", summaryRows)}
+          ${renderCard("Graph stats", statsRows.slice(0, 1))}
+        </div>
+      `;
+    }
+
+    const { detailsRows, statsRows } = summarizeSimpleEdge(e);
+
+    return `
+    <div class="md-status md-status-compact">
+      ${renderCard("Relationship", detailsRows)}
+      ${renderCard("Graph stats", statsRows.slice(0, 1))}
     </div>
   `;
 }
