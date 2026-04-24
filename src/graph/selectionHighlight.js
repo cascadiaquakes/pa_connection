@@ -65,12 +65,17 @@ function nodeMatchesValue(n, arrayKey, primaryKey, value) {
 }
 
 export function applySelectionBuckets(cy, selectionSpecs = [], selectionState = {}) {
+    const activeSpecs = selectionSpecs.filter((spec) => {
+        const selectedValues = selectionState[spec.stateKey];
+        return selectedValues instanceof Set && selectedValues.size > 0;
+    });
+
     const selectedNodes = cy.nodes("[!isGrid]").filter((n) => {
         if (n.style("display") === "none") return false;
+        if (activeSpecs.length === 0) return false;
 
-        return selectionSpecs.some((spec) => {
+        return activeSpecs.every((spec) => {
             const selectedValues = selectionState[spec.stateKey];
-            if (!(selectedValues instanceof Set) || selectedValues.size === 0) return false;
 
             return Array.from(selectedValues).some((value) =>
                 nodeMatchesValue(n, spec.arrayKey, spec.primaryKey, value)
