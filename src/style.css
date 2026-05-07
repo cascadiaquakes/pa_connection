@@ -210,6 +210,33 @@ body.is-resizing {
     margin: 0;
 }
 
+.tab-action-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 0 10px;
+}
+
+.panel-title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.panel-title-row h3,
+.panel-title-row h4,
+.panel-title-row p {
+    margin: 0;
+}
+
+.panel-title-row p {
+    color: #666;
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: right;
+}
+
 .row {
     display: flex;
     align-items: center;
@@ -242,6 +269,81 @@ button {
     align-items: center;
     gap: 8px;
     margin: 4px 0;
+}
+
+.checklist label[hidden] {
+    display: none;
+}
+
+.checklist-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.checklist-action {
+    padding: 4px 8px;
+    border-radius: 7px;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.checklist-show-all {
+    margin-top: 6px;
+}
+
+.filter-accordion {
+    border-top: 1px solid #e7e7e7;
+}
+
+.filter-accordion:last-child {
+    border-bottom: 1px solid #e7e7e7;
+}
+
+.filter-accordion-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 16px;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.filter-accordion-summary::-webkit-details-marker {
+    display: none;
+}
+
+.filter-accordion-title {
+    min-width: 0;
+    color: #333;
+    font-size: 13px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.filter-accordion-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-accordion-chevron {
+    width: 8px;
+    height: 8px;
+    border-right: 1.5px solid #555;
+    border-bottom: 1.5px solid #555;
+    transform: rotate(45deg);
+    transition: transform 0.15s ease;
+    justify-self: center;
+}
+
+.filter-accordion[open] .filter-accordion-chevron {
+    transform: rotate(225deg);
+}
+
+.filter-accordion-body {
+    padding: 0 0 10px;
 }
 
 .hint {
@@ -565,6 +667,39 @@ button {
     max-width: 980px;
     margin: 0 auto 16px;
     padding: 16px;
+}
+
+.info-modal-details-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.info-modal-details-summary::-webkit-details-marker {
+    display: none;
+}
+
+.info-modal-details-summary h3 {
+    margin: 0;
+}
+
+.info-modal-details .filter-accordion-chevron {
+    flex: 0 0 auto;
+}
+
+.info-modal-details[open] .filter-accordion-chevron {
+    transform: rotate(225deg);
+}
+
+.info-modal-details:not([open]) {
+    padding-bottom: 16px;
+}
+
+.info-modal-details #infoModalStatus {
+    margin-top: 12px;
 }
 
 

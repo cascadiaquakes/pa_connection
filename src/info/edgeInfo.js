@@ -1,4 +1,4 @@
-import { escapeHtml, displayValue, isVisible, renderCard } from "./infoRender.js";
+import { escapeHtml, displayValue, renderCard } from "./infoRender.js";
 
 function renderDirectionCard(fromName, toName, relTypes) {
     const clean = Array.isArray(relTypes)
@@ -36,11 +36,6 @@ function summarizeSimpleEdge(e) {
         ["To", targetName],
     ];
 
-    const statsRows = [
-        ["Visible", isVisible(e) ? "Yes" : "No"],
-        ["Edge id", e.id()],
-    ];
-
     const skip = new Set([
         "_edgeColor",
         "isGrid",
@@ -58,7 +53,7 @@ function summarizeSimpleEdge(e) {
         .map((k) => [k, displayValue(d[k])])
         .filter(([, v]) => v !== "");
 
-    return { detailsRows, statsRows, extraRows };
+    return { detailsRows, extraRows };
 }
 
 function summarizeAggregatedEdge(e) {
@@ -82,11 +77,6 @@ function summarizeAggregatedEdge(e) {
                 : d._dir === "reverse"
                     ? `${targetName} → ${sourceName}`
                     : "Unknown"],
-    ];
-
-    const statsRows = [
-        ["Visible", isVisible(e) ? "Yes" : "No"],
-        ["Edge id", e.id()],
     ];
 
     const skip = new Set([
@@ -118,7 +108,6 @@ function summarizeAggregatedEdge(e) {
         forward,
         reverse,
         summaryRows,
-        statsRows,
         extraRows,
     };
 }
@@ -134,7 +123,6 @@ export function renderEdgeInfo(e) {
             forward,
             reverse,
             summaryRows,
-            statsRows,
             extraRows,
         } = summarizeAggregatedEdge(e);
 
@@ -143,18 +131,16 @@ export function renderEdgeInfo(e) {
           ${renderCard("Relationship summary", summaryRows, { linkifyValues: true })}
           ${renderDirectionCard(sourceName, targetName, forward)}
           ${reverse.length ? renderDirectionCard(targetName, sourceName, reverse) : ""}
-          ${renderCard("Graph stats", statsRows)}
           ${extraRows.length ? renderCard("Other attributes", extraRows, { linkifyValues: true }) : ""}
         </div>
       `;
     }
 
-    const { detailsRows, statsRows, extraRows } = summarizeSimpleEdge(e);
+    const { detailsRows, extraRows } = summarizeSimpleEdge(e);
 
     return `
     <div class="md-status">
       ${renderCard("Relationship", detailsRows, { linkifyValues: true })}
-      ${renderCard("Graph stats", statsRows)}
       ${extraRows.length ? renderCard("Other attributes", extraRows, { linkifyValues: true }) : ""}
     </div>
   `;
@@ -165,22 +151,20 @@ export function renderEdgeSummary(e) {
     const isAggregated = d.isAggregated === "true";
 
     if (isAggregated) {
-        const { summaryRows, statsRows } = summarizeAggregatedEdge(e);
+        const { summaryRows } = summarizeAggregatedEdge(e);
 
         return `
         <div class="md-status md-status-compact">
           ${renderCard("Relationship summary", summaryRows)}
-          ${renderCard("Graph stats", statsRows.slice(0, 1))}
         </div>
       `;
     }
 
-    const { detailsRows, statsRows } = summarizeSimpleEdge(e);
+    const { detailsRows } = summarizeSimpleEdge(e);
 
     return `
     <div class="md-status md-status-compact">
       ${renderCard("Relationship", detailsRows)}
-      ${renderCard("Graph stats", statsRows.slice(0, 1))}
     </div>
   `;
 }

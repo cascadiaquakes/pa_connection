@@ -110,6 +110,7 @@ function showFatal(err) {
                     selectedFunctionalDomains,
                     selectedRoles,
                     selectedLifelines,
+                    selectedOrganizations,
                     allowedRelTypes,
                     prune,
                     layoutMode
@@ -139,12 +140,19 @@ function showFatal(err) {
                     selectedFunctionalDomains,
                     selectedRoles,
                     selectedLifelines,
+                    selectedOrganizations,
                 });
                 runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
                 updateGridHeaderColors(cy, nodeColorMode);
                 updateNodeColorLegend(cy, nodeColorMode);
                 updateGraphInfo(cy, state);
             },
+        });
+        document.getElementById("btnResetControls")?.addEventListener("click", () => {
+            controls.resetToFullView();
+        });
+        document.getElementById("btnResetFilters")?.addEventListener("click", () => {
+            controls.resetToFullView();
         });
         cy.scratch("_controls", controls);
     } catch (e) {

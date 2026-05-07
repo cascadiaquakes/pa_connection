@@ -57,9 +57,11 @@ export function initSelectionHighlight(cy) {
 }
 
 function nodeMatchesValue(n, arrayKey, primaryKey, value) {
-    const values = n.data(arrayKey);
-    if (Array.isArray(values)) {
-        return values.map((v) => String(v ?? "")).includes(String(value));
+    if (arrayKey) {
+        const values = n.data(arrayKey);
+        if (Array.isArray(values)) {
+            return values.map((v) => String(v ?? "")).includes(String(value));
+        }
     }
     return String(n.data(primaryKey) ?? "") === String(value);
 }

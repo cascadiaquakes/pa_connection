@@ -42,19 +42,6 @@ function summarizeNode(n) {
         ["Notes", d.notes],
     ];
 
-    const connectedEdges = n.connectedEdges();
-    const visibleEdges = connectedEdges.filter((e) => isVisible(e));
-
-    const neighborNodes = n.neighborhood("node");
-    const visibleNeighborNodes = neighborNodes.filter((nn) => isVisible(nn));
-
-    const statsRows = [
-        ["Connected relationships", connectedEdges.length],
-        ["Visible relationships", visibleEdges.length],
-        ["Connected organizations", neighborNodes.length],
-        ["Visible organizations", visibleNeighborNodes.length],
-    ];
-
     const skip = new Set([
         "_nodeColor",
         "isGrid",
@@ -93,7 +80,7 @@ function summarizeNode(n) {
         .map((k) => [k, displayValue(d[k])])
         .filter(([, v]) => v !== "");
 
-    return { detailsRows, statsRows, extraRows };
+    return { detailsRows, extraRows };
 }
 
 function renderNodeJump(targetNode) {
@@ -179,24 +166,22 @@ function renderConnectionSection(title, rows) {
 }
 
 export function renderNodeSummary(n) {
-    const { detailsRows, statsRows } = summarizeNode(n);
+    const { detailsRows } = summarizeNode(n);
 
     return `
     <div class="md-status md-status-compact">
       ${renderCard("Organization", detailsRows.slice(0, 5))}
-      ${renderCard("Graph stats", statsRows.slice(0, 2))}
     </div>
   `;
 }
 
 export function renderNodeInfo(n) {
-    const { detailsRows, statsRows, extraRows } = summarizeNode(n);
+    const { detailsRows, extraRows } = summarizeNode(n);
     const { outgoing, incoming } = directionalConnectionsForNode(n);
 
     return `
     <div class="md-status">
       ${renderCard("Organization", detailsRows, { linkifyValues: true })}
-      ${renderCard("Graph stats", statsRows)}
       ${renderConnectionSection("Outgoing relationships", outgoing)}
       ${renderConnectionSection("Incoming relationships", incoming)}
       ${extraRows.length ? renderCard("Other attributes", extraRows, { linkifyValues: true }) : ""}
