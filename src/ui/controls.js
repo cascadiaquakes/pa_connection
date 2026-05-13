@@ -305,6 +305,21 @@ function sortByVisualOrder(values, order = []) {
     });
 }
 
+function createSelectionWarning(selectionContainers) {
+    const firstSelectionContainer = selectionContainers.find((spec) => spec.el)?.el;
+    if (!firstSelectionContainer?.parentElement) return null;
+
+    const warning = document.createElement("div");
+    warning.className = "selection-warning";
+    warning.setAttribute("role", "status");
+    warning.setAttribute("aria-live", "polite");
+    warning.hidden = true;
+    warning.textContent = "No organizations match this highlight combination.";
+
+    firstSelectionContainer.parentElement.insertBefore(warning, firstSelectionContainer);
+    return warning;
+}
+
 export function initControls(cy, { onChange }) {
     const nodeColorModeEl = document.getElementById("nodeColorMode");
     const edgeDisplayModeEl = document.getElementById("edgeDisplayMode");
@@ -322,6 +337,7 @@ export function initControls(cy, { onChange }) {
         el: document.getElementById(spec.containerId),
     }));
     const visibleOrganizationSpec = selectionContainers.find((spec) => spec.visibleOnly);
+    const selectionWarningEl = createSelectionWarning(selectionContainers);
 
     for (const spec of filterContainers) {
         if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
@@ -474,5 +490,9 @@ export function initControls(cy, { onChange }) {
     return {
         emit,
         resetToFullView,
+        setSelectionWarning({ hasActiveSelectionFilters = false, matchCount = 0 } = {}) {
+            if (!selectionWarningEl) return;
+            selectionWarningEl.hidden = !hasActiveSelectionFilters || matchCount > 0;
+        },
     };
 }

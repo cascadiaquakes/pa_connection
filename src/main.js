@@ -22,6 +22,9 @@ import { initSidebarResize } from "./ui/sidebarResize.js";
 import { updateNodeColorLegend } from "./ui/colorLegend.js";
 import { initInfoModal } from "./ui/infoModal.js";
 
+function hasActiveSelectionFilters(selectionState) {
+    return Object.values(selectionState).some((value) => value instanceof Set && value.size > 0);
+}
 
 function showFatal(err) {
     console.error(err);
@@ -91,7 +94,8 @@ function showFatal(err) {
         initSearchTab(cy);
         initExportTab(cy);
         updateNodeColorLegend(cy, "orgCat");
-        const controls = initControls(cy, {
+        let controls;
+        controls = initControls(cy, {
             onChange: (state) => {
                 const {
                     nodeColorMode,
@@ -132,7 +136,7 @@ function showFatal(err) {
                     layoutMode
                 });
                 setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
-                applySelectionBuckets(cy, NODE_SELECTION_SPECS, {
+                const selectionState = {
                     selectedOrgCategories,
                     selectedGeos,
                     selectedNodeTypes,
@@ -141,6 +145,11 @@ function showFatal(err) {
                     selectedRoles,
                     selectedLifelines,
                     selectedOrganizations,
+                };
+                const selectedNodes = applySelectionBuckets(cy, NODE_SELECTION_SPECS, selectionState);
+                controls?.setSelectionWarning({
+                    hasActiveSelectionFilters: hasActiveSelectionFilters(selectionState),
+                    matchCount: selectedNodes.length,
                 });
                 runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
                 updateGridHeaderColors(cy, nodeColorMode);
