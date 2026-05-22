@@ -1,122 +1,328 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Graph Dashboard</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="icon" href="/favicon.ico">
+    <title>P&A connections</title>
 </head>
 <body>
-<div id="app">
-    <aside class="sidebar">
-        <!-- Tabs header -->
-        <div class="sidebar-tabs" role="tablist" aria-label="Sidebar tabs">
-            <button
-                    type="button"
-                    class="tab active"
-                    id="tabSettings"
-                    role="tab"
-                    aria-selected="true"
-                    aria-controls="panelSettings"
+<div class="app-shell">
+    <header class="app-header">
+        <div class="brand-logos" aria-label="Project sponsors">
+            <a
+                    class="brand-link"
+                    href="https://cascadiaquakes.org/"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Visit the CRESCENT website"
             >
-                Settings
-            </button>
-
-            <button
-                    type="button"
-                    class="tab"
-                    id="tabInfo"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="panelInfo"
+                <img
+                        class="brand-logo brand-logo-crescent"
+                        src="/logos/Crescent_Logo.png"
+                        alt="CRESCENT Cascadia Region Earthquake Science Center"
+                />
+            </a>
+            <a
+                    class="brand-link"
+                    href="https://www.nsf.gov/"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Visit the U.S. National Science Foundation website"
             >
-                Info
-            </button>
+                <img
+                        class="brand-logo brand-logo-nsf"
+                        src="/logos/USNSF_Logo.png"
+                        alt="U.S. National Science Foundation"
+                />
+            </a>
         </div>
+        <div class="app-header-title">P&amp;A Connections Viewer</div>
+        <div class="app-header-meta" aria-label="Release status">Prototype version 3</div>
+    </header>
 
-        <!-- Tabs content -->
-        <div class="tab-panels">
-            <!-- SETTINGS -->
-            <div
-                    class="tab-panel active"
-                    id="panelSettings"
-                    role="tabpanel"
-                    aria-labelledby="tabSettings"
-            >
-                <section class="panel">
-                    <h3>Coloring</h3>
-
-                    <label class="row">
-                        <span>Nodes</span>
-                        <select id="nodeColorMode">
-                            <option value="none">None</option>
-                            <option value="orgCat">Organization Category</option>
-                            <option value="geo">Geographic Area</option>
-                        </select>
-                    </label>
-
-                    <label class="row">
-                        <span>Edges</span>
-                        <select id="edgeColorMode">
-                            <option value="none">None</option>
-                            <option value="relType">Relationship type</option>
-                        </select>
-                    </label>
-                </section>
-
-                <!-- Node Filters -->
-                <section class="panel">
-                    <h3>Node filters</h3>
-
-                    <div class="hint">Organization Category</div>
-                    <div id="orgCategoryFilters" class="checklist"></div>
-
-                    <div class="hint" style="margin-top: 10px;">Geographic Area</div>
-                    <div id="geoFilters" class="checklist"></div>
-                </section>
-
-                <!-- Edge Filters -->
-                <section class="panel">
-                    <h3>Edge filters</h3>
-
-                    <div class="hint">Relationship type</div>
-                    <div id="relTypeFilters" class="checklist"></div>
-                </section>
-
-                <section class="panel">
-                    <h3>Graph</h3>
-
-                    <label class="switch">
-                        <input type="checkbox" id="togglePrune" checked />
-                        <span class="slider" aria-hidden="true"></span>
-                        <span class="switch-label">Prune isolated nodes</span>
-                    </label>
-                </section>
+    <div id="app">
+        <aside class="sidebar">
+            <!-- Tabs header -->
+            <div class="sidebar-tabs" role="tablist" aria-label="Sidebar tabs">
+                <button
+                        type="button"
+                        class="tab active"
+                        id="tabControls"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="panelControls"
+                >
+                    Controls
+                </button>
+                <button
+                        type="button"
+                        class="tab"
+                        id="tabFilters"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="panelFilters"
+                >
+                    Filters
+                </button>
+                <button
+                        type="button"
+                        class="tab"
+                        id="tabInfo"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="panelInfo"
+                >
+                    Info
+                </button>
+                <button
+                        type="button"
+                        class="tab"
+                        id="tabExport"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="panelExport"
+                >
+                    Export
+                </button>
+                <button
+                        type="button"
+                        class="tab"
+                        id="tabSearch"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="panelSearch"
+                >
+                    Search
+                </button>
             </div>
 
-            <!-- INFO -->
-            <div
-                    class="tab-panel"
-                    id="panelInfo"
-                    role="tabpanel"
-                    aria-labelledby="tabInfo"
-                    hidden
-            >
-                <section class="panel">
-                    <h3>Selection</h3>
-                    <div id="infoSelection"></div>
-                </section>
-                <section class="panel">
-                    <h3>Status</h3>
-                    <div id="infoStatus"></div>
-                </section>
+            <!-- Tabs content -->
+            <div class="tab-panels">
+                <!-- SETTINGS -->
+                <div
+                        class="tab-panel active"
+                        id="panelFilters"
+                        role="tabpanel"
+                        aria-labelledby="tabFilters"
+                >
+                    <div class="tab-action-row">
+                        <button id="btnResetFilters" type="button" class="button-secondary">Reset</button>
+                    </div>
 
+                    <section class="panel">
+                        <div class="panel-title-row">
+                            <h4>Node filters</h4>
+                            <p>Show or hide organizations</p>
+                        </div>
+
+                        <div id="orgCategoryFilters" class="checklist"></div>
+
+                        <div id="nodeTypeFilters" class="checklist"></div>
+
+                        <div id="governanceFilters" class="checklist"></div>
+
+                        <div id="functionalDomainFilters" class="checklist"></div>
+
+                        <div id="roleFilters" class="checklist"></div>
+
+                        <div id="lifelineFilters" class="checklist"></div>
+
+                        <div id="geoFilters" class="checklist"></div>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel-title-row">
+                            <h4>Edge filters</h4>
+                            <p>Show or hide relationships</p>
+                        </div>
+
+                        <div id="relTypeFilters" class="checklist"></div>
+                    </section>
+                </div>
+
+                <div
+                        class="tab-panel"
+                        id="panelControls"
+                        role="tabpanel"
+                        aria-labelledby="tabControls"
+                        hidden
+                >
+                    <div class="tab-action-row">
+                        <button id="btnResetControls" type="button" class="button-secondary">Reset</button>
+                    </div>
+
+                    <section class="panel">
+                        <div class="panel-title-row">
+                            <h4>Selection</h4>
+                            <p>Highlight organizations</p>
+                        </div>
+
+                        <div id="selectionOrgCategoryFilters" class="checklist"></div>
+
+                        <div id="selectionNodeTypeFilters" class="checklist"></div>
+
+                        <div id="selectionGovernanceFilters" class="checklist"></div>
+
+                        <div id="selectionFunctionalDomainFilters" class="checklist"></div>
+
+                        <div id="selectionRoleFilters" class="checklist"></div>
+
+                        <div id="selectionLifelineFilters" class="checklist"></div>
+
+                        <div id="selectionGeoFilters" class="checklist"></div>
+
+                        <div id="selectionOrganizationFilters" class="checklist"></div>
+                    </section>
+                    <section class="panel">
+                        <h4>Coloring</h4>
+
+                        <label class="row">
+                            <span>Nodes</span>
+                            <select id="nodeColorMode">
+                                <option value="orgCat">Organization Category</option>
+                                <option value="nodeType">Node Type</option>
+                                <option value="governance">Governance Level</option>
+                                <option value="functionalDomain">Functional Domain</option>
+                                <option value="role">Role</option>
+                                <option value="lifeline">FEMA Lifeline</option>
+                                <option value="geo">Geographic Area</option>
+                                <option value="none">None</option>
+                            </select>
+                        </label>
+
+                        <div id="nodeColorLegend" class="color-legend" hidden></div>
+
+                        <label class="row">
+                            <span>Edges</span>
+                            <select id="edgeDisplayMode">
+                                <option value="simplified">Simplified</option>
+                                <option value="detailed">Detailed</option>
+                            </select>
+                        </label>
+                    </section>
+                    <section class="panel">
+                        <h4>Graph</h4>
+
+                        <label class="switch">
+                            <input type="checkbox" id="togglePrune"/>
+                            <span class="slider" aria-hidden="true"></span>
+                            <span class="switch-label">Prune isolated nodes</span>
+                        </label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleLayout"/>
+                            <span class="slider" aria-hidden="true"></span>
+                            <span class="switch-label">Self Organizing Layout</span>
+                        </label>
+                    </section>
+                </div>
+
+                <!-- INFO -->
+                <div
+                        class="tab-panel"
+                        id="panelInfo"
+                        role="tabpanel"
+                        aria-labelledby="tabInfo"
+                        hidden
+                >
+                    <section class="panel">
+                        <div class="panel-head">
+                            <h3>Selection</h3>
+                            <button id="btnInfoSeeAll" type="button" class="button-secondary">More...</button>
+                        </div>
+                        <div id="infoSelection" class="info-preview"></div>
+                    </section>
+                    <section class="panel">
+                        <h3>Graph stats</h3>
+                        <div id="infoStatus" class="info-preview"></div>
+                    </section>
+
+                </div>
+                <div
+                        class="tab-panel"
+                        id="panelExport"
+                        role="tabpanel"
+                        aria-labelledby="tabExport"
+                        hidden
+                >
+                    <section class="panel">
+                        <h3>Export graph</h3>
+                        <button id="btnExportJson" type="button">Download all JSON</button>
+
+                        <div id="exportStatus" class="hint" style="margin-top: 10px;"></div>
+                    </section>
+                </div>
+                <div
+                        class="tab-panel"
+                        id="panelSearch"
+                        role="tabpanel"
+                        aria-labelledby="tabSearch"
+                        hidden
+                >
+                    <section class="panel">
+                        <h3>Search organizations</h3>
+
+                        <label class="row" for="searchInput" style="display:block;">
+                            <span class="hint">Search across name, ID, categories, geography, roles, notes, review flags, and contacts</span>
+                            <input
+                                    id="searchInput"
+                                    type="text"
+                                    placeholder="Type to search organizations..."
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    style="width: 100%; margin-top: 8px;"
+                            />
+                        </label>
+
+                        <div id="searchCount" class="hint" style="margin-top: 10px;">0 results</div>
+                        <div id="searchResults" class="search-results" style="margin-top: 10px;"></div>
+                    </section>
+                </div>
             </div>
-        </div>
-    </aside>
+        </aside>
+        <div
+                id="sidebarResizer"
+                class="sidebar-resizer"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize sidebar"
+        ></div>
 
-    <main class="main">
-        <div id="cy" class="cy"></div>
-    </main>
+        <main class="main">
+            <div id="cy" class="cy"></div>
+        </main>
+    </div>
+</div>
+
+<div id="infoModal" class="info-modal" hidden>
+    <div id="infoModalBackdrop" class="info-modal-backdrop"></div>
+    <div
+            class="info-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="infoModalTitle"
+    >
+        <div class="info-modal-header">
+            <div>
+                <div class="info-modal-eyebrow">Details</div>
+                <h2 id="infoModalTitle">Details</h2>
+            </div>
+            <button id="btnInfoModalClose" type="button" class="button-secondary">Close</button>
+        </div>
+        <div class="info-modal-body">
+            <section id="infoModalSelectionPanel" class="panel">
+                <h3>Selection</h3>
+                <div id="infoModalSelection"></div>
+            </section>
+            <details id="infoModalGraphPanel" class="panel info-modal-details">
+                <summary class="info-modal-details-summary">
+                    <h3>Graph stats</h3>
+                    <span class="filter-accordion-chevron" aria-hidden="true"></span>
+                </summary>
+                <div id="infoModalStatus"></div>
+            </details>
+        </div>
+    </div>
 </div>
 
 <script type="module" src="/src/main.js"></script>

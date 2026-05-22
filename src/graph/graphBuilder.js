@@ -1,76 +1,86 @@
 import cytoscape from "cytoscape";
-import {baseStylesheet} from "./styles.js";
-import {applyBoxPresetLayout} from "./boxLayout.js";
-import {addGridDecorations} from "./gridDecorations.js";
-import {layoutConfig} from "../config/layoutConfig.js";
+import cytoscapePopper from "cytoscape-popper";
+import tippy from "tippy.js";
+import "tippy.js/dist/tippy.css";
+import {
+    baseStylesheet,
+    gridDecorationStyles,
+    dynamicColorStyles,
+    selectionStyles,
+    edgeDisplayModeStyles,
+} from "./styles.js";
+import { applyBoxPresetLayout } from "./boxLayout.js";
+import { addGridDecorations } from "./gridDecorations.js";
+import { layoutConfig } from "../config/layoutConfig.js";
+import { deriveGraphView } from "./graphViewData.js";
 
+function tippyFactory(ref, content) {
+    const dummyDomEle = document.createElement("div");
 
-function gridDecorationStyles() {
+    return tippy(dummyDomEle, {
+        getReferenceClientRect: ref.getBoundingClientRect,
+        trigger: "manual",
+        content,
+        arrow: true,
+        placement: "top",
+        hideOnClick: false,
+        interactive: true,
+        appendTo: document.body,
+    });
+}
+
+cytoscape.use(cytoscapePopper(tippyFactory));
+
+function normalizeElements(elements) {
+    if (Array.isArray(elements)) return elements;
+
+    if (elements && Array.isArray(elements.nodes) && Array.isArray(elements.edges)) {
+        return [...elements.nodes, ...elements.edges];
+    }
+
+    console.error("[graphBuilder] Invalid elements passed to createGraph:", elements);
+    return [];
+}
+
+function buildStylesheet({ edgeDisplayMode }) {
     return [
-        {
-            selector: 'node[isGridPoint][isGrid="true"]',
-            style: {
-                width: 1,
-                height: 1,
-                opacity: 0,
-                "events": "no",
-                label: "",
-                "z-index": 0,
-            },
-        },
-        {
-            selector: 'edge[isGridLine][isGrid="true"]',
-            style: {
-                width: 1,
-                "line-color": "#d0d0d0",
-                "curve-style": "straight",
-                "target-arrow-shape": "none",
-                opacity: 1,
-                "events": "no",
-                "z-index": 0,
-            },
-        },
-        {
-            selector: 'node[isGridHeader][isGrid="true"][label]',
-            style: {
-                shape: "round-rectangle",
-
-                width: "data(_w)",
-                height: "data(_h)",
-
-                label: "data(label)",
-                "font-size": 11,
-
-                "text-wrap": "wrap",
-                "text-max-width": "data(_w)",
-
-                "text-valign": "center",
-                "text-halign": "center",
-
-                "background-opacity": 0,
-                "border-width": 0,
-
-                color: "#333",
-                "z-index": 0,
-                "events": "no",
-            },
-        },
-        { selector: 'edge[!isGrid]', style: { "z-index": 5 } },
-        { selector: 'node[!isGrid]', style: { "z-index": 10 } },
+        ...baseStylesheet(),
+        ...gridDecorationStyles(),
+        ...dynamicColorStyles(),
+        ...selectionStyles(),
+        ...edgeDisplayModeStyles(edgeDisplayMode),
     ];
 }
 
-export function createGraph({container, elements}) {
+function splitGridAndReal(elements) {
+    const normalized = normalizeElements(elements);
+
+    const grid = [];
+    const real = [];
+
+    for (const el of normalized) {
+        if (el?.data?.isGrid === "true") grid.push(el);
+        else real.push(el);
+    }
+
+    return { grid, real };
+}
+
+export function createGraph({ container, elements, initialView = {} }) {
+    const normalized = normalizeElements(elements);
+    const { grid, real } = splitGridAndReal(normalized);
+
     const cy = cytoscape({
         container,
-        elements,
-        style: [
-            ...baseStylesheet(),
-            ...gridDecorationStyles(),
-        ],
-
-        layout: {name: "cose", animate: false},
+        elements: [...grid, ...real],
+        style: buildStylesheet({
+            edgeDisplayMode: initialView.edgeDisplayMode ?? "simplified",
+        }),
+        layout: { name: "cose", animate: false },
     });
+
+    cy.scratch("_rawElements", real);
+    cy.scratch("_gridElements", grid);
 
     cy.edges().forEach((e) => {
         if (e.data("_missingEndpoint")) e.addClass("missingEndpoint");
@@ -79,175 +89,134 @@ export function createGraph({container, elements}) {
     return cy;
 }
 
-export function applyColorModes(cy, {nodeColorMode, edgeColorMode}) {
-    const ss = baseStylesheet();
+export function applyView(cy, view = {}) {
+    const rawElements = cy.scratch("_rawElements") ?? [];
+    const gridElements = cy.scratch("_gridElements") ?? [];
 
-    ss.push(...gridDecorationStyles());
-    // Grid header background tint (must be >= specificity of the base header rule)
-    ss.push({
-        selector: 'node[isGridHeader][isGrid="true"][label][_gridColor]',
-        style: {
-            "background-color": "data(_gridColor)",
-            "background-opacity": 0.35,
-            "text-outline-width": 0,
-            color: "#333",
-        },
-    });
-    ss.push({
-        selector: 'node[isGridHeader][gridAxis="col"]',
-        style: {
-            "font-size": 10,
-            "text-wrap": "wrap",
-        }
-    });
+    const derived = deriveGraphView(rawElements, view);
 
-    // Ensure real nodes/edges above grid
-    ss.push({selector: 'edge[!isGrid]', style: {"z-index": 5}});
-    ss.push({selector: 'node[!isGrid]', style: {"z-index": 10}});
-
-    // Node color mode (do NOT affect grid)
-    if (nodeColorMode !== "none") {
-        ss.push({
-            selector: 'node[!isGrid][_nodeColor]',
-            style: {"background-color": "data(_nodeColor)"},
-        });
-    }
-
-    // Edge color mode (do NOT affect grid)
-    if (edgeColorMode !== "none") {
-        ss.push({
-            selector: 'edge[!isGrid][_edgeColor]',
-            style: {
-                "line-color": "data(_edgeColor)",
-                "target-arrow-color": "data(_edgeColor)",
-            },
-        });
-    }
-
-    // --- Focus mode (selection spotlight) ---
-
-// Dim everything else
-    ss.push({
-        selector: "node[!isGrid].dim",
-        style: {
-            opacity: 0.10,
-            "text-opacity": 0.0,
-        },
-    });
-    ss.push({
-        selector: "edge[!isGrid].dim",
-        style: {
-            opacity: 0.08,
-        },
-    });
-
-// Secondary emphasis: neighbors + connected edges
-    ss.push({
-        selector: "node[!isGrid].neighbor",
-        style: {
-            opacity: 0.55,
-            "text-opacity": 1,
-            "border-width": 2,
-            "border-color": "rgba(47, 128, 237, 0.55)",
-        },
-    });
-    ss.push({
-        selector: "edge[!isGrid].connected",
-        style: {
-            opacity: 0.75,
-            width: 3,
-            "z-index": 50,
-        },
-    });
-
-// Primary emphasis: selected node
-    ss.push({
-        selector: "node[!isGrid].selected",
-        style: {
-            opacity: 1,
-            "text-opacity": 1,
-            "border-width": 5,
-            "border-color": "#2f80ed",
-            "z-index": 100,
-        },
-    });
-
-    cy.style(ss);
-}
-
-function asSet(x) {
-    return x instanceof Set ? x : new Set();
-}
-
-export function recomputeVisibility(
-    cy,
-    {allowedOrgCategories, allowedGeos, allowedRelTypes, prune = true} = {}
-) {
-    allowedOrgCategories = asSet(allowedOrgCategories);
-    allowedGeos = asSet(allowedGeos);
-    allowedRelTypes = asSet(allowedRelTypes);
+    const selectedNodeIds = cy.nodes(":selected").map((n) => n.id());
+    const selectedEdgeIds = cy.edges(":selected").map((e) => e.id());
 
     cy.batch(() => {
-        // 0) Clean slate
-        cy.nodes().style("display", "none");
-        cy.edges().style("display", "none");
+        cy.elements('[!isGrid]').remove();
+        cy.add([...derived.nodes, ...derived.edges]);
 
-        // Always show grid decorations
-        cy.elements('[isGrid="true"]').style("display", "element");
-
-        // 1) Show real nodes that pass filters
-        cy.nodes('[!isGrid]').forEach((n) => {
-            const geo = String(n.data("geoPrimary") ?? "");
-
-            const orgTypes = n.data("orgTypes");
-            const typesArr = Array.isArray(orgTypes)
-                ? orgTypes.map((t) => String(t ?? ""))
-                : [String(n.data("orgTypePrimary") ?? "")];
-
-            const okCat = typesArr.some((t) => allowedOrgCategories.has(t));
-            const okGeo = allowedGeos.has(geo);
-
-            if (okCat && okGeo) n.style("display", "element");
-        });
-
-        // 2) Show real edges that pass filters AND connect visible real nodes
-        cy.edges('[!isGrid]').forEach((e) => {
-            const rt = String(e.data("relType") ?? "");
-            if (!allowedRelTypes.has(rt)) return;
-
-            const sVisible = e.source().style("display") !== "none";
-            const tVisible = e.target().style("display") !== "none";
-            if (sVisible && tVisible) e.style("display", "element");
-        });
-
-        // 3) Optional prune of isolated nodes
-        if (prune) {
-            cy.nodes().forEach((n) => {
-                if (n.style("display") === "none") return;
-
-                const hasVisibleEdge = n.connectedEdges().some(
-                    (e) => e.style("display") !== "none"
-                );
-
-                if (!hasVisibleEdge) n.style("display", "none");
-            });
+        // make sure grid still exists; usually it already does
+        if (cy.elements('[isGrid="true"]').length === 0 && gridElements.length > 0) {
+            cy.add(gridElements);
         }
 
-        // 4) Safety pass for real edges only
-        cy.edges('[!isGrid]').forEach((e) => {
-            if (e.style("display") === "none") return;
-            const sVisible = e.source().style("display") !== "none";
-            const tVisible = e.target().style("display") !== "none";
-            if (!sVisible || !tVisible) e.style("display", "none");
+        cy.style(
+            buildStylesheet({
+                edgeDisplayMode: view.edgeDisplayMode ?? "simplified",
+            })
+        );
+
+        selectedNodeIds.forEach((id) => {
+            const node = cy.getElementById(id);
+            if (node.nonempty()) node.select();
+        });
+
+        selectedEdgeIds.forEach((id) => {
+            const edge = cy.getElementById(id);
+            if (edge.nonempty()) edge.select();
         });
     });
+}
+
+function showGridDecorations(cy, show) {
+    cy.elements('[isGrid = "true"]').forEach((ele) => {
+        ele.style("display", show ? "element" : "none");
+    });
+}
+
+function isVisible(ele) {
+    return ele.style("display") !== "none";
+}
+
+function getVisibleWeightedDegree(node) {
+    return node.connectedEdges()
+        .filter((e) => isVisible(e))
+        .reduce((sum, e) => {
+            return sum + Number(e.data("weight") ?? 1);
+        }, 0);
+}
+
+function applyNodeSizing(cy, { layoutMode } = {}) {
+    const realNodes = cy.nodes('[isGrid != "true"]').filter((n) => isVisible(n));
+
+    // Fixed size for boxed/grid layout
+    if (layoutMode === "grid" || layoutMode === "boxes") {
+        realNodes.forEach((n) => {
+            n.style({
+                width: layoutConfig.nodeSize ?? 28,
+                height: layoutConfig.nodeSize ?? 28,
+                "font-size": layoutConfig.nodeFontSize ?? 10,
+            });
+        });
+        return;
+    }
+
+    // Degree-scaled size for organic layout
+    if (layoutMode === "organic") {
+        const values = realNodes.map((n) => getVisibleWeightedDegree(n));
+        const minVal = values.length ? Math.min(...values) : 0;
+        const maxVal = values.length ? Math.max(...values) : 1;
+
+        realNodes.forEach((n) => {
+            const v = getVisibleWeightedDegree(n);
+
+            const sqrtMin = Math.sqrt(minVal);
+            const sqrtMax = Math.sqrt(maxVal);
+            const sqrtV = Math.sqrt(v);
+
+            const denom = (sqrtMax - sqrtMin) || 1;
+            const t = maxVal > minVal ? (sqrtV - sqrtMin) / denom : 0;
+
+            const size = 24 + t * 36; // 24..60
+
+            n.style({
+                width: size,
+                height: size,
+                "font-size": 10 + t * 4,
+            });
+        });
+    }
 }
 
 export function runLayout(cy, name) {
     if (name === "boxes") {
         addGridDecorations(cy, layoutConfig);
+        showGridDecorations(cy, true);
+        applyNodeSizing(cy, { layoutMode: "grid" });
         applyBoxPresetLayout(cy, layoutConfig);
         return;
     }
-    cy.layout({name, animate: true, animationDuration: 300}).run();
+    if (name === "organic") {
+        showGridDecorations(cy, false);
+        applyNodeSizing(cy, { layoutMode: "organic" });
+        cy.layout({
+            name: "cose",
+            animate: true,
+            animationDuration: 2000,
+            fit: true,
+            padding: 40,
+            randomize: false,
+            nodeRepulsion: 8000,
+            idealEdgeLength: 120,
+            edgeElasticity: 100,
+            gravity: 0.8,
+            numIter: 1000,
+            componentSpacing: 80,
+        }).run();
+
+        return;
+    }
+
+    cy.layout({
+        name,
+        animate: true,
+        animationDuration: 2000,
+    }).run();
 }

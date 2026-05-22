@@ -1,91 +1,29 @@
 import { layoutConfig } from "../config/layoutConfig.js";
+import { computeCellGridForWidth, computeGridGeometry } from "./gridGeometry.js";
 
-function seededRand(seed) {
-    let s = seed >>> 0;
-    return () => {
-        s = (1664525 * s + 1013904223) >>> 0;
-        return s / 2 ** 32;
-    };
-}
+function sortCellNodes(cellNodes) {
+    return [...cellNodes].sort((a, b) => {
+        const oa = a.data("visualOrder") ?? 1e9;
+        const ob = b.data("visualOrder") ?? 1e9;
+        if (oa !== ob) return oa - ob;
 
-function toBreaks(values, weights, start, end, minFrac = 0.1) {
-    // Allocate minimum fraction per band so tiny categories are still visible.
-    const total = Array.from(weights.values()).reduce((a, b) => a + b, 0) || 1;
-    const n = values.length || 1;
-
-    // raw fractions
-    let fracs = values.map(v => (weights.get(v) ?? 0) / total);
-
-    // enforce minimum, then renormalize
-    fracs = fracs.map(f => Math.max(f, minFrac));
-    const sum = fracs.reduce((a, b) => a + b, 0);
-    fracs = fracs.map(f => f / sum);
-
-    // cumulative breaks in absolute coordinates
-    const span = end - start;
-    const breaks = [start];
-    let acc = start;
-    for (let i = 0; i < n; i++) {
-        acc += fracs[i] * span;
-        breaks.push(acc);
-    }
-    // ensure exact end
-    breaks[breaks.length - 1] = end;
-    return breaks; // length n+1
-}
-
-function orderObservedOnly(preferred, observedSet) {
-    const observed = Array.from(observedSet);
-    const idx = new Map((preferred ?? []).map((v, i) => [v, i]));
-
-    observed.sort((a, b) => {
-        const ia = idx.has(a) ? idx.get(a) : 1e9;
-        const ib = idx.has(b) ? idx.get(b) : 1e9;
-        if (ia !== ib) return ia - ib;
-        return a.localeCompare(b);
+        const la = String(a.data("label") ?? a.data("name") ?? a.id());
+        const lb = String(b.data("label") ?? b.data("name") ?? b.id());
+        return la.localeCompare(lb);
     });
-
-    return observed;
-}
-
-function computeWeightsFromNodes(nodes, values, getKey) {
-    const w = new Map(values.map((v) => [v, 0]));
-    nodes.forEach((n) => {
-        const k = String(getKey(n) ?? "Unknown");
-        if (!w.has(k)) w.set(k, 0);
-        w.set(k, (w.get(k) ?? 0) + 1);
-    });
-    return w;
 }
 
 export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
-    const { bounds, orgTypeOrder, geoOrder, jitter } = cfg;
-
-    // Prefer visible-only; if empty, fall back to all real nodes
-    let nodes = cy.nodes('node[!isGrid]:visible');
-    if (nodes.length === 0) nodes = cy.nodes('node[!isGrid]');
-
-    // observed categories from chosen scope
-    const observedOrg = [];
-    const observedGeo = [];
-    nodes.forEach((n) => {
-        observedOrg.push(String(n.data("orgTypePrimary") ?? "Unknown"));
-        observedGeo.push(String(n.data("geoPrimary") ?? "Unknown"));
-    });
-
-    const orgValues = orderObservedOnly(orgTypeOrder, new Set(observedOrg));
-    const geoValues = orderObservedOnly(geoOrder, new Set(observedGeo));
-
-    const orgW = computeWeightsFromNodes(nodes, orgValues, (n) => n.data("orgTypePrimary"));
-    const geoW = computeWeightsFromNodes(nodes, geoValues, (n) => n.data("geoPrimary"));
-
-    const xBreaks = toBreaks(orgValues, orgW, bounds.x0, bounds.x1, cfg.minColFrac ?? 0.05);
-    const yBreaks = toBreaks(geoValues, geoW, bounds.y0, bounds.y1, cfg.minRowFrac ?? 0.05);
-
-    const xIndex = new Map(orgValues.map((v, i) => [v, i]));
-    const yIndex = new Map(geoValues.map((v, i) => [v, i]));
-
-    const rnd = seededRand(jitter?.seed ?? 1);
+    const {
+        nodes,
+        orgValues,
+        geoValues,
+        xBreaks,
+        yBreaks,
+        xIndex,
+        yIndex,
+        bounds,
+    } = computeGridGeometry(cy, cfg);
 
     cy.batch(() => {
         // Group nodes by cell
@@ -101,21 +39,23 @@ export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
             cellMap.get(key).push(n);
         });
 
-        // Place nodes within each cell using a grid packing
-        for (const [key, cellNodes] of cellMap.entries()) {
+        // Place nodes within each cell using a geometry-driven grid
+        for (const [key, rawCellNodes] of cellMap.entries()) {
             const [ixStr, iyStr] = key.split("::");
             const ix = Number(ixStr);
             const iy = Number(iyStr);
 
-            const x0 = xBreaks[ix], x1 = xBreaks[ix + 1];
-            const y0 = yBreaks[iy], y1 = yBreaks[iy + 1];
+            const x0 = xBreaks[ix];
+            const x1 = xBreaks[ix + 1];
+            const y0 = yBreaks[iy];
+            const y1 = yBreaks[iy + 1];
 
             const cellW = Math.max(1, x1 - x0);
             const cellH = Math.max(1, y1 - y0);
 
-            // padding inside the box so points don't sit on lines
-            const padX = Math.min(24, cellW * 0.12);
-            const padY = Math.min(20, cellH * 0.12);
+            // padding inside the box so nodes do not sit on the border lines
+            const padX = Math.min(cfg.cellPadding.x ?? 24, cellW * (cfg.cellPadding.xFrac ?? 0.12));
+            const padY = Math.min(cfg.cellPadding.y ?? 20, cellH * (cfg.cellPadding.yFrac ?? 0.12));
 
             const xmin = x0 + padX;
             const xmax = x1 - padX;
@@ -125,45 +65,55 @@ export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
             const innerW = Math.max(1, xmax - xmin);
             const innerH = Math.max(1, ymax - ymin);
 
+            const cellNodes = sortCellNodes(rawCellNodes);
             const k = cellNodes.length;
+            if (k === 0) continue;
 
-            // Choose grid dims close to aspect ratio
-            const aspect = innerW / innerH;
-            let cols = Math.ceil(Math.sqrt(k * aspect));
-            cols = Math.max(1, cols);
-            let rows = Math.ceil(k / cols);
-            rows = Math.max(1, rows);
-
-            const dx = innerW / cols;
-            const dy = innerH / rows;
-
-            // Shuffle-ish ordering (deterministic) so it doesn't look too regular
-            // We'll just offset indices by a pseudo-random start.
-            const offset = Math.floor(rnd() * k);
+            // `computeCellGridForWidth` decides how many internal columns this box gets.
+            // If you want boxes to spread wider before becoming taller, tune:
+            // - layoutConfig.bounds.x1
+            // - layoutConfig.nodeGrid.targetCellW
+            // - layoutConfig.nodeGrid.minCellW
+            // - layoutConfig.nodeGrid.maxCols
+            const { cols, rows, slotW, slotH } = computeCellGridForWidth(innerW, k, cfg.nodeGrid ?? {});
+            const contentH = rows * slotH;
+            const startY = ymin + Math.max(0, (innerH - contentH) / 2);
 
             for (let idx = 0; idx < k; idx++) {
-                const n = cellNodes[(idx + offset) % k];
+                const n = cellNodes[idx];
 
                 const r = Math.floor(idx / cols);
-                const c = idx % cols;
+                const idxInRow = idx % cols;
 
-                // center of each grid slot
-                let x = xmin + (c + 0.5) * dx;
-                let y = ymin + (r + 0.5) * dy;
+                const isLastRow = r === rows - 1;
+                const itemsInThisRow = isLastRow ? (k - r * cols) : cols;
+                const contentW = itemsInThisRow * slotW;
 
-                // small jitter inside slot so it feels organic, but keep inside slot bounds
-                const jx = (rnd() - 0.5) * 2 * Math.min(jitter?.x ?? 0, dx * 0.35);
-                const jy = (rnd() - 0.5) * 2 * Math.min(jitter?.y ?? 0, dy * 0.35);
+                // Center each row within the box.
+                // Earlier rows use `cols`, the last row may have fewer items.
+                const startX = xmin + Math.max(0, (innerW - contentW) / 2);
 
-                n.position({ x: x + jx, y: y + jy });
+                const x = startX + idxInRow * slotW + slotW / 2;
+                const y = startY + r * slotH + slotH / 2;
+
+                n.position({ x, y });
             }
         }
     });
 
-    // preset doesn't move nodes; run to refresh internals, then fit visible (or all if none)
+    // Refresh internals, then either fit the full grid to the viewport or keep
+    // a fixed zoom/pan depending on the grid viewport preference.
     cy.layout({ name: "preset", fit: false, animate: false }).run();
-    const fitEles = cy.elements(':visible').length ? cy.elements(':visible') : cy.elements();
-    cy.fit(fitEles, 30);
+    if (cfg.fitToViewport ?? false) {
+        const fitEles = cy.elements(":visible").length ? cy.elements(":visible") : cy.elements();
+        cy.fit(fitEles, cfg.fitPadding ?? 30);
+    } else {
+        cy.zoom(cfg.initialGridZoom ?? 1);
+        cy.pan({
+            x: (cfg.viewportPadding?.left ?? 40) - bounds.x0,
+            y: (cfg.viewportPadding?.top ?? 40) - bounds.y0,
+        });
+    }
 
     return { orgValues, geoValues, xBreaks, yBreaks };
 }

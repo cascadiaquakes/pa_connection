@@ -12,11 +12,10 @@ function cleanId(s) {
     return clean(s).replace(/\s+/g, "");
 }
 
-function parseOrgTypes(r) {
-    // loader may already have set r.orgTypes = [...]
-    if (Array.isArray(r.orgTypes)) return r.orgTypes;
+function parseJsonArrayField(r, fieldName) {
+    if (Array.isArray(r[fieldName])) return r[fieldName];
 
-    const s = clean(r["orgTypes_json"] ?? r["orgTypes"]);
+    const s = clean(r[`${fieldName}_json`] ?? r[fieldName]);
     if (!s) return [];
     try {
         const v = JSON.parse(s);
@@ -55,7 +54,13 @@ export function buildElementsFromRows(nodeRows, edgeRows) {
         const orgName = clean(r["Organization Name"]);
         const orgTypePrimary = clean(r["orgTypePrimary"]);
         const geoPrimary = clean(r["geoPrimary"]);
-        const orgTypes = parseOrgTypes(r);
+        const orgTypes = parseJsonArrayField(r, "orgTypes");
+        const geoTags = parseJsonArrayField(r, "geoTags");
+        const nodeTypes = parseJsonArrayField(r, "nodeTypes");
+        const governanceLevels = parseJsonArrayField(r, "governanceLevels");
+        const functionalDomains = parseJsonArrayField(r, "functionalDomains");
+        const roleTags = parseJsonArrayField(r, "roleTags");
+        const lifelineTags = parseJsonArrayField(r, "lifelineTags");
 
         nodes.push({
             data: {
@@ -70,11 +75,25 @@ export function buildElementsFromRows(nodeRows, edgeRows) {
 
                 // for filtering (multi-category)
                 orgTypes,
+                geoTags,
+                nodeTypePrimary: clean(r["nodeTypePrimary"]),
+                nodeTypes,
+                governanceLevelPrimary: clean(r["governanceLevelPrimary"]),
+                governanceLevels,
+                functionalDomainPrimary: clean(r["functionalDomainPrimary"]),
+                functionalDomains,
+                rolePrimary: clean(r["rolePrimary"]),
+                roleTags,
+                femaLifelinePrimary: clean(r["femaLifelinePrimary"]),
+                lifelineTags,
 
                 // carry-through metadata
                 notes: clean(r["Notes"]),
                 primary: clean(r["Primary"]),
                 secondary: clean(r["2ndry"]),
+                url: clean(r["url"]),
+                reviewFlag: clean(r["review_flag"]),
+                reviewNote: clean(r["review_note"]),
 
                 _nodeColor: paletteColor(orgTypePrimary || geoPrimary || "unknown"),
             },

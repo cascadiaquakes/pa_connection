@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "preprocess:data": "python scripts/preprocess_data.py",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -13,6 +14,8 @@
   },
   "dependencies": {
     "cytoscape": "^3.33.1",
-    "papaparse": "^5.5.3"
+    "cytoscape-popper": "^4.0.1",
+    "papaparse": "^5.5.3",
+    "tippy.js": "^6.3.7"
   }
 }
