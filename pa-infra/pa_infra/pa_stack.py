@@ -32,7 +32,7 @@ class PaStack(Stack):
         distribution = cloudfront.Distribution(
             self,
             "pa-connection",
-            domain_names=["https://connections-dashboard.cascadiaquakes.org/"],
+            domain_names=["connections-dashboard.cascadiaquakes.org"],
             certificate=acm.Certificate.from_certificate_arn(
                 self,
                 "PaCert",
