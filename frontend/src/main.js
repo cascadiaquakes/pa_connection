@@ -1,6 +1,7 @@
 import "./style.css";
 
 import { loadGraphData } from "./data/dataloader.js";
+import { publicAssetUrl } from "./data/publicAssets.js";
 import {
     createGraph,
     runLayout,
@@ -37,12 +38,10 @@ function showFatal(err) {
 
 (async function main() {
     try {
-        const base = import.meta.env.BASE_URL || "/";
-
-        // Files live in: public/data/*  => served as: <BASE_URL>/data/*
-        const graphUrl = `${base}data/graph.json`;
-        const nodesUrl = `${base}data/organizations_clean.csv`;
-        const edgesUrl = `${base}data/edges_clean.csv`;
+        // Files live in public/data and are resolved relative to the served index.html.
+        const graphUrl = publicAssetUrl("data/graph.json");
+        const nodesUrl = publicAssetUrl("data/organizations_clean.csv");
+        const edgesUrl = publicAssetUrl("data/edges_clean.csv");
 
         const loaded = await loadGraphData({ graphUrl, nodesUrl, edgesUrl, allowCsvFallback: true });
         const nodes = loaded?.nodes ?? [];

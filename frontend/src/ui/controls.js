@@ -2,6 +2,7 @@ import { uniq } from "../data/normalize.js";
 import { visualSpec } from "../config/visualSpec.js";
 import { deriveGraphView } from "../graph/graphViewData.js";
 import { loadWorkshopSelection } from "../data/dataloader.js";
+import { publicAssetUrl } from "../data/publicAssets.js";
 
 const NODE_FILTER_SPECS = [
     {
@@ -358,8 +359,7 @@ export function initControls(cy, { onChange }) {
     }));
     const visibleOrganizationSpec = selectionContainers.find((spec) => spec.visibleOnly);
     const selectionWarningEl = createSelectionWarning(selectionContainers);
-    const base = import.meta.env.BASE_URL || "/";
-    const workshopUrl = `${base}data/workshop_selection.csv`;
+    const workshopUrl = publicAssetUrl("data/workshop_selection.csv");
 
     for (const spec of filterContainers) {
         if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
