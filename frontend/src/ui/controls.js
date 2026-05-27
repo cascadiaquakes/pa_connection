@@ -1,6 +1,7 @@
 import { uniq } from "../data/normalize.js";
 import { visualSpec } from "../config/visualSpec.js";
 import { deriveGraphView } from "../graph/graphViewData.js";
+import { loadWorkshopSelection } from "../data/dataloader.js";
 
 const NODE_FILTER_SPECS = [
     {
@@ -148,6 +149,21 @@ function setAllCheckboxes(container, checked) {
     boxes.forEach((b) => (b.checked = checked));
 }
 
+function normalizeLookupValue(value) {
+    return String(value ?? "").trim().toLowerCase();
+}
+
+function setCheckboxesFromValues(container, checkedValues) {
+    const boxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
+    boxes.forEach((box) => {
+        box.checked = checkedValues.has(box.value);
+    });
+}
+
+function getNodeData(node) {
+    return typeof node.data === "function" ? node.data() : node.data;
+}
+
 function renderChecklist(
     container,
     values,
@@ -160,6 +176,7 @@ function renderChecklist(
         previewLimit = null,
         previewExpanded = false,
         checkedValues = null,
+        extraActions = [],
     } = {}
 ) {
     container.innerHTML = "";
@@ -204,6 +221,9 @@ function renderChecklist(
         actions.className = "filter-accordion-actions";
         actions.appendChild(btnAll);
         actions.appendChild(btnNone);
+        for (const action of extraActions) {
+            actions.appendChild(action);
+        }
         const chevron = document.createElement("span");
         chevron.className = "filter-accordion-chevron";
         chevron.setAttribute("aria-hidden", "true");
@@ -338,6 +358,8 @@ export function initControls(cy, { onChange }) {
     }));
     const visibleOrganizationSpec = selectionContainers.find((spec) => spec.visibleOnly);
     const selectionWarningEl = createSelectionWarning(selectionContainers);
+    const base = import.meta.env.BASE_URL || "/";
+    const workshopUrl = `${base}data/workshop_selection.csv`;
 
     for (const spec of filterContainers) {
         if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
@@ -371,6 +393,81 @@ export function initControls(cy, { onChange }) {
         uniq(cy.edges().map((e) => String(e.data("relType") ?? ""))),
         visualSpec.edges.relType.order
     );
+    const orgNameById = new Map();
+    const orgNameByNormalizedName = new Map();
+    Array.from(cy.nodes("[!isGrid]")).forEach((node) => {
+        const data = getNodeData(node);
+        const orgName = String(data?.orgName ?? "").trim();
+        const orgId = String(data?.id ?? "").trim();
+        if (!orgName) return;
+        orgNameByNormalizedName.set(normalizeLookupValue(orgName), orgName);
+        if (orgId) orgNameById.set(normalizeLookupValue(orgId), orgName);
+    });
+
+    let workshopOrganizationNamesPromise = null;
+    let hasWorkshopSelection = null;
+
+    const loadWorkshopOrganizationNames = async () => {
+        const rows = await loadWorkshopSelection({ workshopUrl });
+        const names = rows
+            .map((row) => {
+                const csvName = String(row["Organization Name"] ?? "").trim();
+                const csvId = String(row["Org ID"] ?? "").trim();
+                return (
+                    orgNameById.get(normalizeLookupValue(csvId)) ??
+                    orgNameByNormalizedName.get(normalizeLookupValue(csvName)) ??
+                    csvName
+                );
+            })
+            .filter(Boolean);
+        return new Set(names);
+    };
+
+    const getWorkshopOrganizationNames = () => {
+        if (!workshopOrganizationNamesPromise) {
+            workshopOrganizationNamesPromise = loadWorkshopOrganizationNames();
+        }
+        return workshopOrganizationNamesPromise;
+    };
+
+    const updateWorkshopButtonVisibility = (button) => {
+        button.hidden = hasWorkshopSelection !== true;
+        getWorkshopOrganizationNames()
+            .then(() => {
+                hasWorkshopSelection = true;
+                button.hidden = false;
+            })
+            .catch((err) => {
+                hasWorkshopSelection = false;
+                button.hidden = true;
+                console.warn("[controls] Workshop selection file is unavailable:", err);
+            });
+    };
+
+    const applyWorkshopSelection = async () => {
+        if (!visibleOrganizationSpec?.el) return;
+        try {
+            const workshopOrganizationNames = await getWorkshopOrganizationNames();
+            setCheckboxesFromValues(visibleOrganizationSpec.el, workshopOrganizationNames);
+            emit();
+        } catch (err) {
+            console.error("[controls] Failed to apply workshop selection:", err);
+        }
+    };
+
+    const createWorkshopButton = () => {
+        const btnWorkshop = document.createElement("button");
+        btnWorkshop.type = "button";
+        btnWorkshop.textContent = "Workshop";
+        btnWorkshop.className = "checklist-action";
+        btnWorkshop.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            applyWorkshopSelection();
+        });
+        updateWorkshopButtonVisibility(btnWorkshop);
+        return btnWorkshop;
+    };
 
     for (const spec of filterContainers) {
         const values = nodeFilterValues[spec.stateKey] ?? [];
@@ -420,6 +517,7 @@ export function initControls(cy, { onChange }) {
             previewLimit: visibleOrganizationSpec.previewLimit,
             previewExpanded: visibleOrganizationSpec.el.dataset.previewExpanded === "true",
             checkedValues: selectedVisible,
+            extraActions: [createWorkshopButton()],
         });
     };
 
@@ -447,6 +545,7 @@ export function initControls(cy, { onChange }) {
                 title: spec.title,
                 defaultOpen: false,
                 previewLimit: spec.previewLimit,
+                extraActions: spec.visibleOnly ? [createWorkshopButton()] : [],
             });
         }
     }
