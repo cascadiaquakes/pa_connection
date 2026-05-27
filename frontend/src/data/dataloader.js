@@ -171,6 +171,25 @@ export async function loadCsvRows({
     return { nodeRows, edgeRows };
 }
 
+export async function loadWorkshopSelection({
+    workshopUrl = "/data/workshop_selection.csv",
+} = {}) {
+    L.group("loadWorkshopSelection");
+    L.log("Params:", { workshopUrl });
+
+    const workshopText = await fetchText(workshopUrl);
+    const workshopRows = parseCSV(workshopText);
+
+    L.log(
+        "workshopRows:",
+        workshopRows.length,
+        workshopRows[0] ? Object.keys(workshopRows[0]) : "(none)"
+    );
+    L.groupEnd();
+
+    return workshopRows;
+}
+
 export async function loadGraphData({
     graphUrl = "/data/graph.json",
     nodesUrl = "/data/organizations_clean.csv",
