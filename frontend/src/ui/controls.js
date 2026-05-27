@@ -360,6 +360,7 @@ export function initControls(cy, { onChange }) {
     const visibleOrganizationSpec = selectionContainers.find((spec) => spec.visibleOnly);
     const selectionWarningEl = createSelectionWarning(selectionContainers);
     const workshopUrl = publicAssetUrl("data/workshop_selection.csv");
+    console.log("[controls] workshop selection URL:", workshopUrl);
 
     for (const spec of filterContainers) {
         if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
