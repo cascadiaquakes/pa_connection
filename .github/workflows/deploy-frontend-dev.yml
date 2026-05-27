@@ -41,7 +41,7 @@ jobs:
 
       - name: Build frontend (dev)
         working-directory: frontend
-        run: npm run build
+        run: npm run build -- --base=/dev/
 
       # ── Authenticate to AWS via OIDC ──────────────────────────
       - name: Configure AWS credentials (OIDC)

@@ -42,6 +42,7 @@ function showFatal(err) {
         const graphUrl = publicAssetUrl("data/graph.json");
         const nodesUrl = publicAssetUrl("data/organizations_clean.csv");
         const edgesUrl = publicAssetUrl("data/edges_clean.csv");
+        console.log("[main] data URLs:", { graphUrl, nodesUrl, edgesUrl });
 
         const loaded = await loadGraphData({ graphUrl, nodesUrl, edgesUrl, allowCsvFallback: true });
         const nodes = loaded?.nodes ?? [];
