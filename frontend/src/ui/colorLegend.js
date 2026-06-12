@@ -1,4 +1,5 @@
 import { visualSpec } from "../config/visualSpec.js";
+import { clearElement, createElement } from "./dom.js";
 
 const MODES_WITH_HEADER_ENCODING = new Set(["none", "orgCat", "geo"]);
 
@@ -30,20 +31,58 @@ function orderedLegendValues(spec, observedValues) {
     return [...ordered, ...remaining];
 }
 
+export function renderColorLegend(
+    element,
+    {
+        title = "Legend",
+        values = [],
+        colors = {},
+    } = {}
+) {
+    const doc = element.ownerDocument ?? document;
+    const items = values.map((value) => {
+        const color = colors[value] ?? stableColorFromString(value);
+        return createElement(
+            doc,
+            "div",
+            { className: "color-legend-item" },
+            [
+                createElement(doc, "span", {
+                    className: "color-legend-swatch",
+                    style: { backgroundColor: color },
+                }),
+                createElement(doc, "span", {
+                    className: "color-legend-label",
+                    text: value,
+                }),
+            ]
+        );
+    });
+    element.replaceChildren(
+        createElement(doc, "div", {
+            className: "color-legend-title",
+            text: `${title} legend`,
+        }),
+        createElement(doc, "div", {
+            className: "color-legend-items",
+        }, items)
+    );
+}
+
 export function updateNodeColorLegend(cy, nodeColorMode, { legendElId = "nodeColorLegend" } = {}) {
     const el = document.getElementById(legendElId);
     if (!el) return;
 
     if (MODES_WITH_HEADER_ENCODING.has(nodeColorMode)) {
         el.hidden = true;
-        el.innerHTML = "";
+        clearElement(el);
         return;
     }
 
     const spec = visualSpec.nodes?.[nodeColorMode];
     if (!spec) {
         el.hidden = true;
-        el.innerHTML = "";
+        clearElement(el);
         return;
     }
 
@@ -52,28 +91,13 @@ export function updateNodeColorLegend(cy, nodeColorMode, { legendElId = "nodeCol
 
     if (values.length === 0) {
         el.hidden = true;
-        el.innerHTML = "";
+        clearElement(el);
         return;
     }
 
     const title = spec.title ?? "Legend";
     const colors = spec.colors ?? {};
-    el.innerHTML = `
-      <div class="color-legend-title">${title} legend</div>
-      <div class="color-legend-items">
-        ${values
-            .map((value) => {
-                const color = colors[value] ?? stableColorFromString(value);
-                return `
-                  <div class="color-legend-item">
-                    <span class="color-legend-swatch" style="background:${color}"></span>
-                    <span class="color-legend-label">${value}</span>
-                  </div>
-                `;
-            })
-            .join("")}
-      </div>
-    `;
+    renderColorLegend(el, { title, values, colors });
 
     el.hidden = false;
 }

@@ -1,4 +1,10 @@
-import { displayValue, escapeHtml, escapeHtmlAttr, isVisible, renderCard } from "./infoRender.js";
+import {
+    displayValue,
+    escapeHtml,
+    isVisible,
+    renderCard,
+    renderInlineAction,
+} from "./infoRender.js";
 
 function arrayOrPrimary(d, arrayKey, primaryKey) {
     if (Array.isArray(d[arrayKey])) return d[arrayKey];
@@ -86,7 +92,11 @@ function summarizeNode(n) {
 function renderNodeJump(targetNode) {
     const label = targetNode.data("orgName") ?? targetNode.data("label") ?? targetNode.id();
     return {
-        html: `<button type="button" class="md-inline-action" data-select-node-id="${escapeHtmlAttr(targetNode.id())}">${escapeHtml(label)}</button>`,
+        html: renderInlineAction(
+            label,
+            "data-select-node-id",
+            targetNode.id()
+        ),
         sortKey: String(label),
     };
 }

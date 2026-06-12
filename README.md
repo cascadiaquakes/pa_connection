@@ -24,6 +24,7 @@ Run frontend commands from `frontend/`:
 ```bash
 cd frontend
 npm install
+npm test
 npm run dev
 ```
 
@@ -181,7 +182,7 @@ Deployment workflows:
 ## Maintenance Notes
 
 - Regenerate and commit `graph.json` whenever preprocessing inputs change.
-- Keep category names in `frontend/src/config/visualSpec.js` aligned with generated node values.
+- Keep node dimensions and category names in `frontend/src/config/nodeDimensions.js` aligned with generated node values.
 - Update `scripts/preprocess_data.py` if CSV headers or graph fields change.
 - The optional workshop CSV is the only CSV loaded by the browser.
 

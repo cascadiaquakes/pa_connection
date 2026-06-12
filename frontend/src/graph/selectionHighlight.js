@@ -1,3 +1,8 @@
+import {
+    clearGraphSelection,
+    replaceGraphSelection,
+} from "./graphSelection.js";
+
 export function initSelectionHighlight(cy) {
     const clear = () => {
         cy.batch(() => {
@@ -85,12 +90,7 @@ export function applySelectionBuckets(cy, selectionSpecs = [], selectionState = 
         });
     });
 
-    cy.batch(() => {
-        cy.elements(":selected").unselect();
-        if (selectedNodes.length > 0) selectedNodes.select();
-    });
-
-    return selectedNodes;
+    return replaceGraphSelection(cy, selectedNodes);
 }
 
 /**
@@ -122,17 +122,9 @@ export function selectNodesFromHeader(
 ) {
     const nodes = getVisibleNodesForHeader(cy, { axis, key });
 
-    cy.batch(() => {
-        cy.elements(":selected").unselect();
-
-        if (nodes.length > 0) {
-            nodes.select();
-        }
-    });
-
-    if (fit && nodes.length > 0) {
-        cy.fit(nodes, padding);
+    if (nodes.length === 0) {
+        clearGraphSelection(cy);
+        return nodes;
     }
-
-    return nodes;
+    return replaceGraphSelection(cy, nodes, { fit, padding });
 }

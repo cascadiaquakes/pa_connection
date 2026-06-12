@@ -11,6 +11,7 @@ import {
 } from "./styles.js";
 import { applyBoxPresetLayout } from "./boxLayout.js";
 import { addGridDecorations } from "./gridDecorations.js";
+import { computeGridGeometry } from "./gridGeometry.js";
 import { layoutConfig } from "../config/layoutConfig.js";
 import { deriveGraphView } from "./graphViewData.js";
 
@@ -76,7 +77,7 @@ export function createGraph({ container, elements, initialView = {} }) {
         style: buildStylesheet({
             edgeDisplayMode: initialView.edgeDisplayMode ?? "simplified",
         }),
-        layout: { name: "cose", animate: false },
+        layout: { name: "preset", fit: false, animate: false },
     });
 
     cy.scratch("_rawElements", real);
@@ -187,11 +188,13 @@ function applyNodeSizing(cy, { layoutMode } = {}) {
 
 export function runLayout(cy, name) {
     if (name === "boxes") {
-        addGridDecorations(cy, layoutConfig);
+        const geometry = computeGridGeometry(cy, layoutConfig);
+        cy.scratch("_gridGeometry", geometry);
+        addGridDecorations(cy, geometry);
         showGridDecorations(cy, true);
         applyNodeSizing(cy, { layoutMode: "grid" });
-        applyBoxPresetLayout(cy, layoutConfig);
-        return;
+        applyBoxPresetLayout(cy, geometry, layoutConfig);
+        return geometry;
     }
     if (name === "organic") {
         showGridDecorations(cy, false);
