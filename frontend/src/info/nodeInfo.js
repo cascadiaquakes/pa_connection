@@ -21,7 +21,6 @@ function summarizeNode(n) {
     const nodeTypes = arrayOrPrimary(d, "nodeTypes", "nodeTypePrimary");
     const geographies = arrayOrPrimary(d, "geoTags", "geoPrimary");
     const governanceLevels = arrayOrPrimary(d, "governanceLevels", "governanceLevelPrimary");
-    const functionalDomains = arrayOrPrimary(d, "functionalDomains", "functionalDomainPrimary");
     const roles = arrayOrPrimary(d, "roleTags", "rolePrimary");
     const lifelines = arrayOrPrimary(d, "lifelineTags", "femaLifelinePrimary");
 
@@ -37,7 +36,6 @@ function summarizeNode(n) {
         ["Organization types", orgTypes],
         ["Geography", geographies],
         ["Governance level", governanceLevels],
-        ["Functional domains", functionalDomains],
         ["Roles", roles],
         ["FEMA lifelines", lifelines],
         ["Website", d.url],

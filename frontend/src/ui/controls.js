@@ -66,6 +66,14 @@ function getNodeData(node) {
     return typeof node.data === "function" ? node.data() : node.data;
 }
 
+function firstRowValue(row, keys) {
+    for (const key of keys) {
+        const value = String(row[key] ?? "").trim();
+        if (value) return value;
+    }
+    return "";
+}
+
 function renderChecklist(
     container,
     values,
@@ -119,19 +127,11 @@ function renderChecklist(
         titleEl.className = "filter-accordion-title";
         titleEl.textContent = title;
 
-        const actions = document.createElement("span");
-        actions.className = "filter-accordion-actions";
-        actions.appendChild(btnAll);
-        actions.appendChild(btnNone);
-        for (const action of extraActions) {
-            actions.appendChild(action);
-        }
         const chevron = document.createElement("span");
         chevron.className = "filter-accordion-chevron";
         chevron.setAttribute("aria-hidden", "true");
 
         summary.appendChild(titleEl);
-        summary.appendChild(actions);
         summary.appendChild(chevron);
         listParent.appendChild(summary);
         container.appendChild(listParent);
@@ -147,6 +147,17 @@ function renderChecklist(
     // --- Checklist items ---
     const list = document.createElement("div");
     list.className = collapsible ? "filter-accordion-body" : "";
+    if (collapsible) {
+        const actions = document.createElement("div");
+        actions.className = "filter-accordion-actions checklist-actions-row";
+        actions.appendChild(btnAll);
+        actions.appendChild(btnNone);
+        for (const action of extraActions) {
+            actions.appendChild(action);
+        }
+        list.appendChild(actions);
+    }
+
     const displayValues = values.length ? values : [""];
     const shouldLimit =
         Number.isInteger(previewLimit) && displayValues.length > previewLimit && !previewExpanded;
@@ -202,7 +213,7 @@ function collectNodeValuesFromNodes(nodes, arrayKey, primaryKey) {
     nodes.forEach((n) => {
         const data = typeof n.data === "function" ? n.data() : n.data;
         const values = data?.[arrayKey];
-        if (Array.isArray(values)) {
+        if (Array.isArray(values) && values.length > 0) {
             all.push(...values.map((x) => String(x ?? "").trim()));
             return;
         }
@@ -317,8 +328,8 @@ export function initControls(cy, { onChange }) {
         const rows = await loadWorkshopSelection({ workshopUrl });
         const names = rows
             .map((row) => {
-                const csvName = String(row["Organization Name"] ?? "").trim();
-                const csvId = String(row["Org ID"] ?? "").trim();
+                const csvName = firstRowValue(row, ["name", "Organization Name"]);
+                const csvId = firstRowValue(row, ["node_id", "Org ID"]);
                 return (
                     orgNameById.get(normalizeLookupValue(csvId)) ??
                     orgNameByNormalizedName.get(normalizeLookupValue(csvName)) ??

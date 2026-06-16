@@ -18,8 +18,12 @@ function canonicalPair(a, b) {
 
 function nodeValues(nodeData, arrayKey, primaryKey) {
     const raw = nodeData[arrayKey];
-    if (Array.isArray(raw)) return raw.map((v) => String(v ?? ""));
-    return [String(nodeData[primaryKey] ?? "")];
+    if (Array.isArray(raw) && raw.length > 0) {
+        return raw.map((v) => String(v ?? ""));
+    }
+
+    const primary = String(nodeData[primaryKey] ?? "");
+    return primary ? [primary] : [""];
 }
 
 function matchesAllowed(nodeData, allowedValues, arrayKey, primaryKey) {
