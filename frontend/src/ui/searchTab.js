@@ -1,4 +1,6 @@
 import { searchNodeIndex } from "../graph/nodeSearch.js";
+import { selectNodeById } from "../graph/graphSelection.js";
+import { appendHighlightedText, createElement } from "./dom.js";
 
 function debounce(fn, delay = 150) {
     let t;
@@ -8,27 +10,36 @@ function debounce(fn, delay = 150) {
     };
 }
 
-function highlightMatch(text, query) {
-    if (!query) return text;
+export function renderSearchResults(resultsEl, results, query, onSelect) {
+    const doc = resultsEl.ownerDocument ?? document;
+    const items = results.map((result) => {
+        const title = createElement(doc, "div", { className: "search-title" });
+        appendHighlightedText(title, result.title, query, doc);
 
-    const q = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`(${q})`, "ig");
-
-    return text.replace(re, "<mark>$1</mark>");
-}
-
-function selectSingleNode(cy, nodeId) {
-    cy.batch(() => {
-        cy.elements().unselect();
-        const node = cy.getElementById(nodeId);
-        if (node.nonempty()) {
-            node.select();
-            cy.animate({
-                center: { eles: node },
-                duration: 250,
+        const children = [title];
+        if (result.subtitle) {
+            const subtitle = createElement(doc, "div", {
+                className: "search-subtitle",
             });
+            appendHighlightedText(subtitle, result.subtitle, query, doc);
+            children.push(subtitle);
         }
+
+        const item = createElement(
+            doc,
+            "button",
+            {
+                className: "search-item",
+                attributes: { type: "button" },
+                dataset: { id: result.id },
+            },
+            children
+        );
+        item.addEventListener("click", () => onSelect(result.id));
+        return item;
     });
+
+    resultsEl.replaceChildren(...items);
 }
 
 export function initSearchTab(cy) {
@@ -46,41 +57,18 @@ export function initSearchTab(cy) {
     function render(results) {
         countEl.textContent = `${results.length} result${results.length === 1 ? "" : "s"}`;
 
-        const q = input.value;
+        renderSearchResults(resultsEl, results, input.value, (id) => {
+            let node = cy.getElementById(id);
 
-        resultsEl.innerHTML = results
-            .map((r) => {
-                const title = highlightMatch(r.title, q);
-                const subtitle = r.subtitle ? highlightMatch(r.subtitle, q) : "";
+            if (!node.nonempty()) {
+                const controls = cy.scratch("_controls");
+                controls?.resetToFullView?.();
+                node = cy.getElementById(id);
+            }
 
-                return `
-        <div class="search-item" data-id="${r.id}">
-            <div class="search-title">${title}</div>
-            ${subtitle ? `<div class="search-subtitle">${subtitle}</div>` : ""}
-        </div>
-        `;
-            })
-            .join("");
-
-        resultsEl.querySelectorAll(".search-item").forEach((el) => {
-            el.addEventListener("click", () => {
-                const id = el.getAttribute("data-id");
-
-                let node = cy.getElementById(id);
-
-                if (!node.nonempty()) {
-                    // reset view to guarantee visibility
-                    const controls = cy.scratch("_controls");
-                    if (controls?.resetToFullView) {
-                        controls.resetToFullView();
-                    }
-                    node = cy.getElementById(id);
-                }
-
-                if (node.nonempty()) {
-                    selectSingleNode(cy, id);
-                }
-            });
+            if (node.nonempty()) {
+                selectNodeById(cy, id, { center: true });
+            }
         });
     }
 

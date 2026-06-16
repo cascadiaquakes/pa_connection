@@ -1,3 +1,5 @@
+import { NODE_DIMENSIONS } from "../config/nodeDimensions.js";
+
 function normalizeText(v) {
     return String(v ?? "").trim().toLowerCase();
 }
@@ -36,40 +38,20 @@ function makeSnippet(text, query, radius = 28) {
     return snippet;
 }
 
+const DIMENSION_SEARCH_FIELDS = NODE_DIMENSIONS
+    .filter((dimension) => dimension.search)
+    .sort((a, b) => a.search.order - b.search.order)
+    .map((dimension) => ({
+        key: dimension.search.key,
+        label: dimension.search.label,
+        format: (value) =>
+            Array.isArray(value) ? value.join(", ") : String(value ?? ""),
+    }));
+
 const NODE_SEARCH_FIELDS = [
     { key: "orgName", label: "Name" },
     { key: "id", label: "ID" },
-    {
-        key: "nodeTypes",
-        label: "Node type",
-        format: (v) => (Array.isArray(v) ? v.join(", ") : String(v ?? "")),
-    },
-    {
-        key: "orgTypes",
-        label: "Organization type",
-        format: (v) => (Array.isArray(v) ? v.join(", ") : String(v ?? "")),
-    },
-    { key: "geoPrimary", label: "Geography" },
-    {
-        key: "governanceLevels",
-        label: "Governance",
-        format: (v) => (Array.isArray(v) ? v.join(", ") : String(v ?? "")),
-    },
-    {
-        key: "functionalDomains",
-        label: "Functional domain",
-        format: (v) => (Array.isArray(v) ? v.join(", ") : String(v ?? "")),
-    },
-    {
-        key: "roleTags",
-        label: "Role",
-        format: (v) => (Array.isArray(v) ? v.join(", ") : String(v ?? "")),
-    },
-    {
-        key: "lifelineTags",
-        label: "FEMA lifeline",
-        format: (v) => (Array.isArray(v) ? v.join(", ") : String(v ?? "")),
-    },
+    ...DIMENSION_SEARCH_FIELDS,
     { key: "notes", label: "Notes" },
     { key: "url", label: "Website" },
     { key: "primary", label: "Primary contact" },

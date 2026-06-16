@@ -7,10 +7,16 @@ import {
     runLayout,
     applyView
 } from "./graph/graphBuilder.js";
-import {initControls, NODE_SELECTION_SPECS} from "./ui/controls.js";
+import {initControls} from "./ui/controls.js";
+import { NODE_SELECTION_SPECS } from "./config/nodeDimensions.js";
+import {
+    graphViewState,
+    hasActiveSelectionFilters,
+    nodeSelectionState,
+    planAppStateUpdate,
+} from "./config/appState.js";
 import {initSidebarTabs} from "./ui/tabs.js";
-import {applyBoxPresetLayout} from "./graph/boxLayout.js";
-import {addGridDecorations, updateGridHeaderColors, initGridHeaderInteractions} from "./graph/gridDecorations.js";
+import {updateGridHeaderColors, initGridHeaderInteractions} from "./graph/gridDecorations.js";
 import {initGraphInfo, updateGraphInfo} from "./info/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {applySelectionBuckets, initSelectionHighlight} from "./graph/selectionHighlight.js";
@@ -23,17 +29,49 @@ import { initSidebarResize } from "./ui/sidebarResize.js";
 import { updateNodeColorLegend } from "./ui/colorLegend.js";
 import { initInfoModal } from "./ui/infoModal.js";
 
-function hasActiveSelectionFilters(selectionState) {
-    return Object.values(selectionState).some((value) => value instanceof Set && value.size > 0);
-}
-
 function showFatal(err) {
     console.error(err);
     const el = document.createElement("pre");
-    el.style.padding = "12px";
-    el.style.whiteSpace = "pre-wrap";
+    el.className = "fatal-error";
     el.textContent = `FATAL:\n${err?.stack || err}`;
     document.body.prepend(el);
+}
+
+function applyAppState(cy, state, controls, previousState = null) {
+    const { nodeColorMode, edgeDisplayMode, layoutMode } = state;
+    const update = planAppStateUpdate(previousState, state);
+
+    if (update.viewChanged) {
+        applyView(cy, graphViewState(state));
+    }
+    if (update.viewChanged || update.nodeColorChanged) {
+        setNodeColorData(cy, nodeColorMode);
+    }
+    if (update.viewChanged) {
+        setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
+    }
+
+    if (update.viewChanged || update.selectionChanged) {
+        const selectionState = nodeSelectionState(state);
+        const selectedNodes = applySelectionBuckets(cy, NODE_SELECTION_SPECS, selectionState);
+        controls?.setSelectionWarning({
+            hasActiveSelectionFilters: hasActiveSelectionFilters(selectionState),
+            matchCount: selectedNodes.length,
+        });
+    }
+
+    if (update.requiresLayout) {
+        runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
+    }
+    if (update.requiresLayout || update.nodeColorChanged) {
+        updateGridHeaderColors(cy, nodeColorMode);
+    }
+    if (update.nodeColorChanged) {
+        updateNodeColorLegend(cy, nodeColorMode);
+    }
+    updateGraphInfo(cy, state);
+
+    return update;
 }
 
 (async function main() {
@@ -73,9 +111,7 @@ function showFatal(err) {
 
         cy.on("mouseover", 'node[isGrid != "true"]', showTooltip);
         cy.on("mouseout", 'node[isGrid != "true"]', hideTooltip);
-        addGridDecorations(cy);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
-        applyBoxPresetLayout(cy);
         const sidebarTabs = initSidebarTabs({defaultTab: "controls"});
         initInfoModal();
         initGraphInfo({
@@ -90,68 +126,12 @@ function showFatal(err) {
         });
         initSearchTab(cy);
         initExportTab(cy);
-        updateNodeColorLegend(cy, "orgCat");
+        let previousState = null;
         let controls;
         controls = initControls(cy, {
             onChange: (state) => {
-                const {
-                    nodeColorMode,
-                    edgeDisplayMode,
-                    allowedOrgCategories,
-                    allowedGeos,
-                    allowedNodeTypes,
-                    allowedGovernanceLevels,
-                    allowedFunctionalDomains,
-                    allowedRoles,
-                    allowedLifelines,
-                    selectedOrgCategories,
-                    selectedGeos,
-                    selectedNodeTypes,
-                    selectedGovernanceLevels,
-                    selectedFunctionalDomains,
-                    selectedRoles,
-                    selectedLifelines,
-                    selectedOrganizations,
-                    allowedRelTypes,
-                    prune,
-                    layoutMode
-                } = state;
-
-                setNodeColorData(cy, nodeColorMode);
-                applyView(cy, {
-                    allowedOrgCategories,
-                    allowedGeos,
-                    allowedNodeTypes,
-                    allowedGovernanceLevels,
-                    allowedFunctionalDomains,
-                    allowedRoles,
-                    allowedLifelines,
-                    allowedRelTypes,
-                    prune,
-                    nodeColorMode,
-                    edgeDisplayMode,
-                    layoutMode
-                });
-                setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
-                const selectionState = {
-                    selectedOrgCategories,
-                    selectedGeos,
-                    selectedNodeTypes,
-                    selectedGovernanceLevels,
-                    selectedFunctionalDomains,
-                    selectedRoles,
-                    selectedLifelines,
-                    selectedOrganizations,
-                };
-                const selectedNodes = applySelectionBuckets(cy, NODE_SELECTION_SPECS, selectionState);
-                controls?.setSelectionWarning({
-                    hasActiveSelectionFilters: hasActiveSelectionFilters(selectionState),
-                    matchCount: selectedNodes.length,
-                });
-                runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
-                updateGridHeaderColors(cy, nodeColorMode);
-                updateNodeColorLegend(cy, nodeColorMode);
-                updateGraphInfo(cy, state);
+                applyAppState(cy, state, controls, previousState);
+                previousState = state;
             },
         });
         document.getElementById("btnResetControls")?.addEventListener("click", () => {

@@ -106,7 +106,6 @@ def build_elements_from_rows(node_rows, edge_rows):
         geo_tags = parse_json_array_field(row, "geoTags")
         node_types = parse_json_array_field(row, "nodeTypes")
         governance_levels = parse_json_array_field(row, "governanceLevels")
-        functional_domains = parse_json_array_field(row, "functionalDomains")
         role_tags = parse_json_array_field(row, "roleTags")
         lifeline_tags = parse_json_array_field(row, "lifelineTags")
 
@@ -124,8 +123,6 @@ def build_elements_from_rows(node_rows, edge_rows):
                     "nodeTypes": node_types,
                     "governanceLevelPrimary": clean(row.get("governanceLevelPrimary")),
                     "governanceLevels": governance_levels,
-                    "functionalDomainPrimary": clean(row.get("functionalDomainPrimary")),
-                    "functionalDomains": functional_domains,
                     "rolePrimary": clean(row.get("rolePrimary")),
                     "roleTags": role_tags,
                     "femaLifelinePrimary": clean(row.get("femaLifelinePrimary")),

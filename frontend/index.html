@@ -116,19 +116,7 @@
                             <p>Show or hide organizations</p>
                         </div>
 
-                        <div id="orgCategoryFilters" class="checklist"></div>
-
-                        <div id="nodeTypeFilters" class="checklist"></div>
-
-                        <div id="governanceFilters" class="checklist"></div>
-
-                        <div id="functionalDomainFilters" class="checklist"></div>
-
-                        <div id="roleFilters" class="checklist"></div>
-
-                        <div id="lifelineFilters" class="checklist"></div>
-
-                        <div id="geoFilters" class="checklist"></div>
+                        <div id="nodeFilterControls"></div>
                     </section>
 
                     <section class="panel">
@@ -158,37 +146,14 @@
                             <p>Highlight organizations</p>
                         </div>
 
-                        <div id="selectionOrgCategoryFilters" class="checklist"></div>
-
-                        <div id="selectionNodeTypeFilters" class="checklist"></div>
-
-                        <div id="selectionGovernanceFilters" class="checklist"></div>
-
-                        <div id="selectionFunctionalDomainFilters" class="checklist"></div>
-
-                        <div id="selectionRoleFilters" class="checklist"></div>
-
-                        <div id="selectionLifelineFilters" class="checklist"></div>
-
-                        <div id="selectionGeoFilters" class="checklist"></div>
-
-                        <div id="selectionOrganizationFilters" class="checklist"></div>
+                        <div id="nodeSelectionControls"></div>
                     </section>
                     <section class="panel">
                         <h4>Coloring</h4>
 
                         <label class="row">
                             <span>Nodes</span>
-                            <select id="nodeColorMode">
-                                <option value="orgCat">Organization Category</option>
-                                <option value="nodeType">Node Type</option>
-                                <option value="governance">Governance Level</option>
-                                <option value="functionalDomain">Functional Domain</option>
-                                <option value="role">Role</option>
-                                <option value="lifeline">FEMA Lifeline</option>
-                                <option value="geo">Geographic Area</option>
-                                <option value="none">None</option>
-                            </select>
+                            <select id="nodeColorMode"></select>
                         </label>
 
                         <div id="nodeColorLegend" class="color-legend" hidden></div>
@@ -249,7 +214,7 @@
                         <h3>Export graph</h3>
                         <button id="btnExportJson" type="button">Download all JSON</button>
 
-                        <div id="exportStatus" class="hint" style="margin-top: 10px;"></div>
+                        <div id="exportStatus" class="hint export-status"></div>
                     </section>
                 </div>
                 <div
@@ -262,7 +227,7 @@
                     <section class="panel">
                         <h3>Search organizations</h3>
 
-                        <label class="row" for="searchInput" style="display:block;">
+                        <label class="row search-field" for="searchInput">
                             <span class="hint">Search across name, ID, categories, geography, roles, notes, review flags, and contacts</span>
                             <input
                                     id="searchInput"
@@ -270,12 +235,12 @@
                                     placeholder="Type to search organizations..."
                                     autocomplete="off"
                                     spellcheck="false"
-                                    style="width: 100%; margin-top: 8px;"
+                                    class="search-input"
                             />
                         </label>
 
-                        <div id="searchCount" class="hint" style="margin-top: 10px;">0 results</div>
-                        <div id="searchResults" class="search-results" style="margin-top: 10px;"></div>
+                        <div id="searchCount" class="hint search-count">0 results</div>
+                        <div id="searchResults" class="search-results"></div>
                     </section>
                 </div>
             </div>

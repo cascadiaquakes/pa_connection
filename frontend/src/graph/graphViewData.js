@@ -1,3 +1,5 @@
+import { NODE_FILTER_SPECS } from "../config/nodeDimensions.js";
+
 function asSet(x) {
     return x instanceof Set ? x : new Set(x ?? []);
 }
@@ -16,8 +18,12 @@ function canonicalPair(a, b) {
 
 function nodeValues(nodeData, arrayKey, primaryKey) {
     const raw = nodeData[arrayKey];
-    if (Array.isArray(raw)) return raw.map((v) => String(v ?? ""));
-    return [String(nodeData[primaryKey] ?? "")];
+    if (Array.isArray(raw) && raw.length > 0) {
+        return raw.map((v) => String(v ?? ""));
+    }
+
+    const primary = String(nodeData[primaryKey] ?? "");
+    return primary ? [primary] : [""];
 }
 
 function matchesAllowed(nodeData, allowedValues, arrayKey, primaryKey) {
@@ -25,29 +31,14 @@ function matchesAllowed(nodeData, allowedValues, arrayKey, primaryKey) {
     return nodeValues(nodeData, arrayKey, primaryKey).some((value) => allowedValues.has(value));
 }
 
-function nodePassesFilters(
-    nodeData,
-    {
-        allowedOrgCategories,
-        allowedGeos,
-        allowedNodeTypes,
-        allowedGovernanceLevels,
-        allowedRoles,
-        allowedLifelines,
-    }
-) {
-    return (
-        matchesAllowed(nodeData, allowedOrgCategories, "orgTypes", "orgTypePrimary") &&
-        matchesAllowed(nodeData, allowedGeos, "geoTags", "geoPrimary") &&
-        matchesAllowed(nodeData, allowedNodeTypes, "nodeTypes", "nodeTypePrimary") &&
+function nodePassesFilters(nodeData, view) {
+    return NODE_FILTER_SPECS.every((spec) =>
         matchesAllowed(
             nodeData,
-            allowedGovernanceLevels,
-            "governanceLevels",
-            "governanceLevelPrimary"
-        ) &&
-        matchesAllowed(nodeData, allowedRoles, "roleTags", "rolePrimary") &&
-        matchesAllowed(nodeData, allowedLifelines, "lifelineTags", "femaLifelinePrimary")
+            view[spec.stateKey],
+            spec.arrayKey,
+            spec.primaryKey
+        )
     );
 }
 
@@ -58,45 +49,30 @@ function edgePassesFilters(edgeData, allowedRelTypes) {
 
 export function deriveGraphView(
     rawElements,
-    {
-        allowedOrgCategories = new Set(),
-        allowedGeos = new Set(),
-        allowedNodeTypes = new Set(),
-        allowedGovernanceLevels = new Set(),
-        allowedRoles = new Set(),
-        allowedLifelines = new Set(),
-        allowedRelTypes = new Set(),
-        prune = true,
-        edgeDisplayMode = "simplified", // "simplified" | "detailed"
-    } = {}
+    view = {}
 ) {
-    allowedOrgCategories = asSet(allowedOrgCategories);
-    allowedGeos = asSet(allowedGeos);
-    allowedNodeTypes = asSet(allowedNodeTypes);
-    allowedGovernanceLevels = asSet(allowedGovernanceLevels);
-    allowedRoles = asSet(allowedRoles);
-    allowedLifelines = asSet(allowedLifelines);
-    allowedRelTypes = asSet(allowedRelTypes);
+    const normalizedView = {
+        ...view,
+        allowedRelTypes: asSet(view.allowedRelTypes),
+        prune: view.prune ?? true,
+        edgeDisplayMode: view.edgeDisplayMode ?? "simplified",
+    };
+    for (const spec of NODE_FILTER_SPECS) {
+        normalizedView[spec.stateKey] = asSet(view[spec.stateKey]);
+    }
 
     const rawNodes = rawElements.filter((el) => isNode(el) && el.data?.isGrid !== "true");
     const rawEdges = rawElements.filter((el) => isEdge(el) && el.data?.isGrid !== "true");
     const gridElements = rawElements.filter((el) => el.data?.isGrid === "true");
 
     // 1) filter nodes
-    const keptNodes = rawNodes.filter((n) => nodePassesFilters(n.data, {
-        allowedOrgCategories,
-        allowedGeos,
-        allowedNodeTypes,
-        allowedGovernanceLevels,
-        allowedRoles,
-        allowedLifelines,
-    }));
+    const keptNodes = rawNodes.filter((n) => nodePassesFilters(n.data, normalizedView));
 
     const keptNodeIds = new Set(keptNodes.map((n) => String(n.data.id)));
 
     // 2) filter raw edges by rel type + endpoints still present
     const filteredRawEdges = rawEdges.filter((e) => {
-        if (!edgePassesFilters(e.data, allowedRelTypes)) return false;
+        if (!edgePassesFilters(e.data, normalizedView.allowedRelTypes)) return false;
 
         const s = String(e.data.source);
         const t = String(e.data.target);
@@ -107,7 +83,7 @@ export function deriveGraphView(
     // 3) optional prune based on filtered raw graph connectivity
     let finalNodeIds = keptNodeIds;
 
-    if (prune) {
+    if (normalizedView.prune) {
         const connectedIds = new Set();
         for (const e of filteredRawEdges) {
             connectedIds.add(String(e.data.source));
@@ -126,7 +102,7 @@ export function deriveGraphView(
     });
 
     let finalEdges;
-    if (edgeDisplayMode === "detailed") {
+    if (normalizedView.edgeDisplayMode === "detailed") {
         finalEdges = finalRawEdges;
     } else {
         finalEdges = aggregateEdges(finalRawEdges);

@@ -1,4 +1,8 @@
-import { isVisible, renderCard } from "./infoRender.js";
+import {
+    NODE_DIMENSION_BY_KEY,
+    NODE_FILTER_SPECS,
+} from "../config/nodeDimensions.js";
+import { isVisible, renderCard, setRenderedHtml } from "./infoRender.js";
 
 function countLabel(setOrNull, singular, plural = `${singular}s`) {
     const n = setOrNull?.size ?? 0;
@@ -18,25 +22,7 @@ function formatLayoutMode(layoutMode) {
 }
 
 function formatNodeColorMode(mode) {
-    switch (mode) {
-        case "orgType":
-            return "Organization type";
-        case "nodeType":
-            return "Node type";
-        case "governance":
-            return "Governance level";
-        case "functionalDomain":
-            return "Functional domain";
-        case "role":
-            return "Role";
-        case "lifeline":
-            return "FEMA lifeline";
-        case "geo":
-            return "Geography";
-        case "none":
-        default:
-            return "None";
-    }
+    return NODE_DIMENSION_BY_KEY[mode]?.title ?? "None";
 }
 
 function formatEdgeDisplayMode(mode) {
@@ -80,13 +66,14 @@ function summarizeGraphStatus(cy, state, staticInfo) {
     ];
 
     const filterRows = [
-        ["Organization categories", countLabel(state.allowedOrgCategories, "category")],
-        ["Geographies", countLabel(state.allowedGeos, "geography", "geographies")],
-        ["Node types", countLabel(state.allowedNodeTypes, "type")],
-        ["Governance levels", countLabel(state.allowedGovernanceLevels, "level")],
-        ["Functional domains", countLabel(state.allowedFunctionalDomains, "domain")],
-        ["Roles", countLabel(state.allowedRoles, "role")],
-        ["FEMA lifelines", countLabel(state.allowedLifelines, "lifeline")],
+        ...NODE_FILTER_SPECS.map((spec) => [
+            spec.filterStatus.label,
+            countLabel(
+                state[spec.stateKey],
+                spec.filterStatus.singular,
+                spec.filterStatus.plural
+            ),
+        ]),
         ["Relationship types", countLabel(state.allowedRelTypes, "type")],
     ];
 
@@ -121,16 +108,16 @@ export function initGraphInfo({
     modalEl.dataset.totalEdges = String(totalEdges);
     if (sourceUrl) modalEl.dataset.sourceUrl = sourceUrl;
 
-    el.innerHTML = `
+    setRenderedHtml(el, `
       <div class="md-status md-status-compact">
         ${renderCard("Dataset", [
         ["Organizations", totalNodes],
         ["Relationships", totalEdges],
     ])}
       </div>
-    `;
+    `);
 
-    modalEl.innerHTML = `
+    setRenderedHtml(modalEl, `
       <div class="md-status">
         ${renderCard("Dataset", [
         ["Organizations loaded", totalNodes],
@@ -144,7 +131,7 @@ export function initGraphInfo({
             : ""
     }
       </div>
-    `;
+    `);
 }
 
 /**
@@ -164,7 +151,7 @@ export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = 
     const { overviewRows, displayRows, filterRows, sourceRows } =
         summarizeGraphStatus(cy, state, staticInfo);
 
-    el.innerHTML = `
+    setRenderedHtml(el, `
       <div class="md-status md-status-compact">
         ${renderCard("Overview", [
         ["Visible organizations", overviewRows[2][1]],
@@ -173,14 +160,14 @@ export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = 
         ["Node coloring", displayRows[1][1]],
     ])}
       </div>
-    `;
+    `);
 
-    modalEl.innerHTML = `
+    setRenderedHtml(modalEl, `
       <div class="md-status">
         ${renderCard("Graph overview", overviewRows)}
         ${renderCard("Display", displayRows)}
         ${renderCard("Filters", filterRows)}
         ${sourceRows.length ? renderCard("Source file", sourceRows, { linkifyValues: true }) : ""}
       </div>
-    `;
+    `);
 }

@@ -24,6 +24,7 @@ Run frontend commands from `frontend/`:
 ```bash
 cd frontend
 npm install
+npm test
 npm run dev
 ```
 
@@ -119,8 +120,10 @@ frontend/public/data/workshop_selection.csv
 Expected columns:
 
 ```text
-Organization Name,Org ID
+node_id,name
 ```
+
+The legacy headers `Org ID` and `Organization Name` are also accepted.
 
 This file is optional and may be supplied only for workshop deployments. When absent, the application hides the shortcut and continues normally.
 
@@ -181,7 +184,7 @@ Deployment workflows:
 ## Maintenance Notes
 
 - Regenerate and commit `graph.json` whenever preprocessing inputs change.
-- Keep category names in `frontend/src/config/visualSpec.js` aligned with generated node values.
+- Keep node dimensions and category names in `frontend/src/config/nodeDimensions.js` aligned with generated node values.
 - Update `scripts/preprocess_data.py` if CSV headers or graph fields change.
 - The optional workshop CSV is the only CSV loaded by the browser.
 
@@ -202,4 +205,4 @@ Deployment workflows:
 ### Workshop button is hidden
 
 - This is expected when `frontend/public/data/workshop_selection.csv` is absent.
-- When supplied, verify the CSV headers are `Organization Name` and `Org ID`.
+- When supplied, verify the CSV headers are `node_id` and `name`.

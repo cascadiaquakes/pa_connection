@@ -139,6 +139,49 @@ export function computeGridGeometry(cy, cfg = layoutConfig) {
         yBreaks.push(yBreaks[yBreaks.length - 1] + rowHeight);
     }
 
+    const cells = new Map();
+    for (let iy = 0; iy < geoValues.length; iy++) {
+        for (let ix = 0; ix < orgValues.length; ix++) {
+            const key = `${ix}::${iy}`;
+            const x0 = xBreaks[ix];
+            const x1 = xBreaks[ix + 1];
+            const y0 = yBreaks[iy];
+            const y1 = yBreaks[iy + 1];
+            const width = Math.max(1, x1 - x0);
+            const height = Math.max(1, y1 - y0);
+            const padding = getCellPadding(cfg, width, height);
+            const inner = {
+                x0: x0 + padding.x,
+                x1: x1 - padding.x,
+                y0: y0 + padding.y,
+                y1: y1 - padding.y,
+            };
+            inner.width = Math.max(1, inner.x1 - inner.x0);
+            inner.height = Math.max(1, inner.y1 - inner.y0);
+
+            const count = cellCounts.get(key) ?? 0;
+            cells.set(key, {
+                key,
+                ix,
+                iy,
+                count,
+                x0,
+                x1,
+                y0,
+                y1,
+                width,
+                height,
+                padding,
+                inner,
+                nodeGrid: computeCellGridForWidth(
+                    inner.width,
+                    count,
+                    cfg.nodeGrid ?? {}
+                ),
+            });
+        }
+    }
+
     return {
         nodes,
         orgValues,
@@ -148,6 +191,7 @@ export function computeGridGeometry(cy, cfg = layoutConfig) {
         xIndex,
         yIndex,
         rowHeights,
+        cells,
         bounds: {
             ...bounds,
             y1: yBreaks[yBreaks.length - 1] ?? bounds.y1,
