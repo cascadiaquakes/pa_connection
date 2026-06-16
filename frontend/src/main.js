@@ -40,11 +40,9 @@ function showFatal(err) {
     try {
         // Files live in public/data and are resolved relative to the served index.html.
         const graphUrl = publicAssetUrl("data/graph.json");
-        const nodesUrl = publicAssetUrl("data/organizations_clean.csv");
-        const edgesUrl = publicAssetUrl("data/edges_clean.csv");
-        console.log("[main] data URLs:", { graphUrl, nodesUrl, edgesUrl });
+        console.log("[main] data URL:", graphUrl);
 
-        const loaded = await loadGraphData({ graphUrl, nodesUrl, edgesUrl, allowCsvFallback: true });
+        const loaded = await loadGraphData({ graphUrl });
         const nodes = loaded?.nodes ?? [];
         const edges = loaded?.edges ?? [];
         const diagnostics = loaded?.diagnostics ?? null;
@@ -54,7 +52,7 @@ function showFatal(err) {
             edges: edges.length,
             diagnostics,
             source: loaded?.source,
-            sourceUrls: loaded?.sourceUrls,
+            sourceUrl: loaded?.sourceUrl,
         });
 
         const rawElements = [...nodes, ...edges];
@@ -83,8 +81,7 @@ function showFatal(err) {
         initGraphInfo({
             totalNodes: nodes.length,
             totalEdges: edges.length,
-            nodesUrl: loaded?.sourceUrls?.graphUrl || loaded?.sourceUrls?.nodesUrl || "",
-            edgesUrl: loaded?.sourceUrls?.edgesUrl || "",
+            sourceUrl: loaded?.sourceUrl || "",
         });
         initSelectionInfo(cy);
         initSelectionHighlight(cy);

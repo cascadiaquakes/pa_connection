@@ -54,8 +54,7 @@ function formatEdgeDisplayMode(mode) {
 function summarizeGraphStatus(cy, state, staticInfo) {
     const totalNodes = Number(staticInfo.totalNodes || 0);
     const totalEdges = Number(staticInfo.totalEdges || 0);
-    const nodesUrl = staticInfo.nodesUrl || "";
-    const edgesUrl = staticInfo.edgesUrl || "";
+    const sourceUrl = staticInfo.sourceUrl || "";
 
     const visibleNodes = cy.nodes("[!isGrid]").filter((n) => isVisible(n)).length;
     const visibleEdges = cy.edges("[!isGrid]").filter((e) => isVisible(e)).length;
@@ -92,8 +91,7 @@ function summarizeGraphStatus(cy, state, staticInfo) {
     ];
 
     const sourceRows = [];
-    if (nodesUrl) sourceRows.push(["Nodes file", nodesUrl]);
-    if (edgesUrl) sourceRows.push(["Edges file", edgesUrl]);
+    if (sourceUrl) sourceRows.push(["Graph file", sourceUrl]);
 
     return { overviewRows, displayRows, filterRows, sourceRows };
 }
@@ -105,8 +103,7 @@ function summarizeGraphStatus(cy, state, staticInfo) {
 export function initGraphInfo({
                                   totalNodes = 0,
                                   totalEdges = 0,
-                                  nodesUrl = "",
-                                  edgesUrl = "",
+                                  sourceUrl = "",
                                   statusElId = "infoStatus",
                                   modalStatusElId = "infoModalStatus",
                               } = {}) {
@@ -119,12 +116,10 @@ export function initGraphInfo({
 
     el.dataset.totalNodes = String(totalNodes);
     el.dataset.totalEdges = String(totalEdges);
-    if (nodesUrl) el.dataset.nodesUrl = nodesUrl;
-    if (edgesUrl) el.dataset.edgesUrl = edgesUrl;
+    if (sourceUrl) el.dataset.sourceUrl = sourceUrl;
     modalEl.dataset.totalNodes = String(totalNodes);
     modalEl.dataset.totalEdges = String(totalEdges);
-    if (nodesUrl) modalEl.dataset.nodesUrl = nodesUrl;
-    if (edgesUrl) modalEl.dataset.edgesUrl = edgesUrl;
+    if (sourceUrl) modalEl.dataset.sourceUrl = sourceUrl;
 
     el.innerHTML = `
       <div class="md-status md-status-compact">
@@ -142,10 +137,9 @@ export function initGraphInfo({
         ["Relationships loaded", totalEdges],
     ])}
         ${
-        nodesUrl || edgesUrl
-            ? renderCard("Source files", [
-                ["Nodes file", nodesUrl],
-                ["Edges file", edgesUrl],
+        sourceUrl
+            ? renderCard("Source file", [
+                ["Graph file", sourceUrl],
             ], { linkifyValues: true })
             : ""
     }
@@ -164,8 +158,7 @@ export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = 
     const staticInfo = {
         totalNodes: el.dataset.totalNodes,
         totalEdges: el.dataset.totalEdges,
-        nodesUrl: el.dataset.nodesUrl,
-        edgesUrl: el.dataset.edgesUrl,
+        sourceUrl: el.dataset.sourceUrl,
     };
 
     const { overviewRows, displayRows, filterRows, sourceRows } =
@@ -187,7 +180,7 @@ export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = 
         ${renderCard("Graph overview", overviewRows)}
         ${renderCard("Display", displayRows)}
         ${renderCard("Filters", filterRows)}
-        ${sourceRows.length ? renderCard("Source files", sourceRows, { linkifyValues: true }) : ""}
+        ${sourceRows.length ? renderCard("Source file", sourceRows, { linkifyValues: true }) : ""}
       </div>
     `;
 }

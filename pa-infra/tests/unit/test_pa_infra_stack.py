@@ -1,15 +1,39 @@
 import aws_cdk as core
 import aws_cdk.assertions as assertions
 
-from pa_infra.pa_infra_stack import PaInfraStack
+from pa_infra.pa_stack import PaStack
 
-# example tests. To run these tests, uncomment this file along with the example
-# resource in eq_infra/eq_infra_stack.py
-def test_sqs_queue_created():
+
+def test_cloudfront_distribution_configuration():
     app = core.App()
-    stack = EqInfraStack(app, "pa-infra")
+    stack = PaStack(app, "PaStack")
     template = assertions.Template.from_stack(stack)
 
-#     template.has_resource_properties("AWS::SQS::Queue", {
-#         "VisibilityTimeout": 300
-#     })
+    template.has_resource_properties(
+        "AWS::CloudFront::Distribution",
+        {
+            "DistributionConfig": {
+                "Aliases": ["connections-dashboard.cascadiaquakes.org"],
+                "DefaultRootObject": "index.html",
+                "DefaultCacheBehavior": {
+                    "ViewerProtocolPolicy": "redirect-to-https",
+                },
+                "Origins": assertions.Match.array_with(
+                    [
+                        assertions.Match.object_like(
+                            {
+                                "OriginPath": "/pa_connection",
+                            }
+                        )
+                    ]
+                ),
+            }
+        },
+    )
+
+    template.has_output(
+        "FrontendURL",
+        {
+            "Description": "partners connections viewer",
+        },
+    )

@@ -4,7 +4,6 @@ from aws_cdk import (
     aws_cloudfront as cloudfront,
     aws_certificatemanager as acm,
     aws_cloudfront_origins as origins,
-    aws_iam as iam,
     CfnOutput,
 )
 from constructs import Construct

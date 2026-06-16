@@ -46,11 +46,15 @@ jobs:
       - name: Install CDK dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r pa-infra/requirements.txt
+          pip install -r pa-infra/requirements.txt -r pa-infra/requirements-dev.txt
 
       - name: CDK synth (validate infrastructure)
         working-directory: pa-infra
         run: npx cdk@2 synth -q
+
+      - name: Test infrastructure
+        working-directory: pa-infra
+        run: pytest -q
 
       # ── Upload artifacts ──────────────────────────────────────
       - uses: actions/upload-artifact@v4

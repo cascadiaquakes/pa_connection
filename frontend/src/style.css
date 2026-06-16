@@ -294,18 +294,24 @@ button {
 
 .filter-accordion {
     border-top: 1px solid #e7e7e7;
+    position: relative;
 }
 
 .filter-accordion:last-child {
     border-bottom: 1px solid #e7e7e7;
 }
 
+.filter-accordion-details {
+    display: block;
+}
+
 .filter-accordion-summary {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto 16px;
+    grid-template-columns: minmax(0, 1fr) 16px;
     align-items: center;
     gap: 8px;
     min-height: 42px;
+    padding-right: 170px;
     cursor: pointer;
     list-style: none;
 }
@@ -326,9 +332,14 @@ button {
     display: flex;
     align-items: center;
     gap: 6px;
+    position: absolute;
+    right: 0;
+    top: 9px;
+    z-index: 1;
 }
 
 .filter-accordion-chevron {
+    grid-column: 2;
     width: 8px;
     height: 8px;
     border-right: 1.5px solid #555;
@@ -338,12 +349,13 @@ button {
     justify-self: center;
 }
 
-.filter-accordion[open] .filter-accordion-chevron {
+.filter-accordion-details[open] .filter-accordion-chevron {
     transform: rotate(225deg);
 }
 
 .filter-accordion-body {
     padding: 0 0 10px;
+    width: 100%;
 }
 
 .hint {

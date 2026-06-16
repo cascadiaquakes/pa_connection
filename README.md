@@ -1,104 +1,82 @@
 # P&A network visualization
 
-Interactive network visualization for organizations and relationships in the P&A dataset, built with Vite + Cytoscape.
+Interactive network visualization for organizations and relationships in the P&A dataset, built with Vite and Cytoscape.js.
 
-## What it does
+## Features
 
-- Loads a preprocessed graph (`public/data/graph.json`) or falls back to source CSVs.
-- Renders organizations as nodes and relationships as edges.
-- Supports two edge display modes:
-  - `simplified`: aggregates parallel/bidirectional edges
-  - `detailed`: shows raw edge rows
-- Supports filtering by:
-  - organization category (`orgTypes`)
-  - geography (`geoPrimary`)
-  - relationship type (`relType`)
-- Supports two layouts:
-  - grid/boxed layout (category x geography matrix)
-  - organic force layout (`cose`)
-- Includes:
-  - info panel for selected node/edge details
-  - graph status panel (loaded vs visible counts + current settings)
-  - search tab (name, id, type, geography, notes, contacts)
-
-## Tech stack
-
-- Vite 7 (frontend bundler/dev server)
-- Cytoscape.js (graph rendering)
-- cytoscape-popper + tippy.js (node tooltips)
-- Python script for preprocessing CSV into graph JSON
+- Loads a preprocessed graph from `frontend/public/data/graph.json`.
+- Displays detailed or aggregated relationships.
+- Filters and highlights organizations by category, geography, governance, role, lifeline, and other attributes.
+- Supports grid and force-directed layouts.
+- Provides selection details, graph statistics, search, and JSON export.
+- Optionally provides a workshop selection shortcut when `workshop_selection.csv` is deployed.
 
 ## Requirements
 
-- Node.js `20.19+` (recommended for Vite 7)
+- Node.js `20.19+` or `22.12+`
 - npm
-- Python `3.10+` (tested here with 3.12)
+- Python `3.10+`
 
-## Quick start
+## Frontend
 
-1. Install dependencies:
+Run frontend commands from `frontend/`:
 
 ```bash
+cd frontend
 npm install
-```
-
-2. Generate graph JSON (recommended):
-
-```bash
-npm run preprocess:data
-```
-
-3. Start dev server:
-
-```bash
 npm run dev
 ```
 
-4. Build production bundle:
+Production build:
 
 ```bash
+cd frontend
 npm run build
-```
-
-5. Preview production build:
-
-```bash
 npm run preview
 ```
 
-## Data pipeline
+The dev deployment is built with Vite base `/dev/`. Runtime public assets are resolved through `src/data/publicAssets.js`, so the same code works at both the production root and the `/dev/` deployment.
 
-Runtime loading is handled by `src/data/dataloader.js`:
+## Data Pipeline
 
-- First tries: `public/data/graph.json`
-- Fallback: `public/data/organizations_clean.csv` + `public/data/edges_clean.csv`
+The browser only loads the generated graph JSON:
 
-### Preprocessing script
-
-`npm run preprocess:data` runs:
-
-```bash
-python scripts/preprocess_data.py
+```text
+frontend/public/data/graph.json
 ```
 
-Default inputs:
+CSV files are preprocessing inputs only. The browser does not convert node and edge CSV files at runtime.
 
-- `public/data/organizations_clean.csv`
-- `public/data/edges_clean.csv`
-
-Default output:
-
-- `public/data/graph.json`
-
-Optional CLI args:
+Generate `graph.json` from the default CSV inputs:
 
 ```bash
-python scripts/preprocess_data.py --nodes path/to/nodes.csv --edges path/to/edges.csv --out path/to/graph.json
+cd frontend
+npm run preprocess:data
 ```
 
-### Generated `graph.json` format
+Default repository-relative paths:
 
-Top-level fields:
+```text
+frontend/public/data/organizations_clean.csv
+frontend/public/data/edges_clean.csv
+frontend/public/data/graph.json
+```
+
+`edges_clean.csv` is a required preprocessing input even though it is not required by the deployed frontend after `graph.json` has been generated.
+
+Custom paths can be passed after `--` in node, edge, output order. Paths are resolved relative to the repository root unless absolute:
+
+```bash
+cd frontend
+npm run preprocess:data -- \
+  path/to/organizations.csv \
+  path/to/edges.csv \
+  path/to/graph.json
+```
+
+When invoking the Python script directly, the equivalent `--nodes`, `--edges`, and `--out` flags are also supported.
+
+The generated payload contains:
 
 - `schemaVersion`
 - `generatedAt`
@@ -107,16 +85,13 @@ Top-level fields:
 - `elements.nodes`
 - `elements.edges`
 
-`diagnostics` includes:
+Diagnostics report skipped nodes, duplicate node IDs, and edges with invalid endpoints.
 
-- counts for kept/skipped/duplicate rows
-- samples for skipped/duplicate rows
+### Input Contracts
 
-## Data contracts
+Node fields used:
 
-### Node CSV fields used
-
-- `Org ID` (required, canonical node id)
+- `Org ID`
 - `Organization Name`
 - `orgTypes_json` or `orgTypes`
 - `orgTypePrimary`
@@ -125,135 +100,106 @@ Top-level fields:
 - `Primary`
 - `2ndry`
 
-### Edge CSV fields used
+Edge fields used:
 
-- `From agency` (required)
-- `To agency` (required)
+- `From agency`
+- `To agency`
 - `Relationship type`
 - `Description`
 - `Status`
 
-### Transform rules (preprocess + runtime fallback)
+### Optional Workshop Selection
 
-- Node ids are whitespace-stripped (`"A B" -> "AB"`).
-- Duplicate node ids are dropped (first kept).
-- Edges with missing source/target are dropped.
-- Edges whose endpoints are not present in nodes are dropped.
-- Stable colors are computed per category/type when needed.
-
-## Project structure
+The Controls tab can show a `Workshop` shortcut when this file is available:
 
 ```text
-public/data/
-  organizations_clean.csv
-  edges_clean.csv
-  graph.json
+frontend/public/data/workshop_selection.csv
+```
+
+Expected columns:
+
+```text
+Organization Name,Org ID
+```
+
+This file is optional and may be supplied only for workshop deployments. When absent, the application hides the shortcut and continues normally.
+
+## Project Structure
+
+```text
+frontend/
+  index.html
+  package.json
+  public/
+    data/
+      graph.json
+      organizations_clean.csv
+      edges_clean.csv              # preprocessing input, when available
+      workshop_selection.csv       # optional
+  src/
+    config/
+    data/
+      dataloader.js
+      normalize.js
+      publicAssets.js
+    graph/
+    info/
+    ui/
+    main.js
+    style.css
 
 scripts/
   preprocess_data.py
 
-src/
-  main.js
-  style.css
-
-  config/
-    layoutConfig.js
-    visualSpec.js
-
-  data/
-    dataloader.js
-    normalize.js
-    transforms.js
-
-  graph/
-    graphBuilder.js
-    graphViewData.js
-    boxLayout.js
-    gridDecorations.js
-    graphColors.js
-    selectionHighlight.js
-    nodeSearch.js
-    tooltips.js
-    styles.js
-
-  info/
-    graphStatus.js
-    selectionInfo.js
-    nodeInfo.js
-    edgeInfo.js
-    infoRender.js
-
-  ui/
-    controls.js
-    tabs.js
-    searchTab.js
+pa-infra/
+  app.py
+  cdk.json
+  pa_infra/
+    pa_stack.py
+  tests/
 ```
 
-## UI behavior
+## Infrastructure
 
-### Settings tab
+The CDK stack imports the existing `crescent-react-hosting` bucket and configures CloudFront with S3 origin path `/pa_connection`.
 
-- Node coloring: `Organization Category`, `Geographic Area`, `None`
-- Edge mode: `Simplified` vs `Detailed`
-- Filters:
-  - Organization Category checklist
-  - Geographic Area checklist
-  - Relationship type checklist
-- Toggles:
-  - `Prune isolated nodes`
-  - `Self Organizing Layout`
+Run infrastructure validation from `pa-infra/`:
 
-### Info tab
+```bash
+cd pa-infra
+python -m pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+npx cdk@2 synth -q
+```
 
-- Selection card:
-  - empty state
-  - single selected node/edge detail
-  - multi-selection summary
-- Graph status card:
-  - loaded/visible counts
-  - current display/filter settings
-  - data source paths
+Deployment workflows:
 
-### Search tab
+- Production frontend: S3 prefix `pa_connection`
+- Development frontend: S3 prefix `pa_connection/dev`
+- Infrastructure: CDK stack `PaStack`
 
-- Debounced client-side search over indexed node fields.
-- Clicking a result selects and centers that node.
-- If result is hidden by filters, search resets to full view first.
+## Maintenance Notes
 
-## Configuration
-
-### `src/config/visualSpec.js`
-
-Defines:
-
-- category and geography ordering
-- color palettes for node categories/geographies
-- relationship-type color palette for detailed edges
-
-### `src/config/layoutConfig.js`
-
-Defines:
-
-- matrix bounds and size fractions
-- row/column ordering
-- per-cell padding and node packing target size
-
-## Notes for maintainers
-
-- Keep `visualSpec` category names aligned with incoming data values.
-- If CSV headers change, update both:
-  - `scripts/preprocess_data.py`
-  - `src/data/transforms.js` (fallback path)
-- Runtime fallback exists for resilience, but shipping `graph.json` is preferred.
+- Regenerate and commit `graph.json` whenever preprocessing inputs change.
+- Keep category names in `frontend/src/config/visualSpec.js` aligned with generated node values.
+- Update `scripts/preprocess_data.py` if CSV headers or graph fields change.
+- The optional workshop CSV is the only CSV loaded by the browser.
 
 ## Troubleshooting
 
-- Build warning about Node version:
-  - Vite 7 expects Node `20.19+` or `22.12+`.
-- App loads but graph is empty:
-  - check `public/data/graph.json` existence and shape
-  - run `npm run preprocess:data`
-  - inspect browser console diagnostics (skipped edge/node samples)
-- CSV path issues in dev/prod:
-  - ensure files are under `public/data/`
-  - runtime URLs are built from `import.meta.env.BASE_URL`
+### Graph fails to load
+
+- Confirm `frontend/public/data/graph.json` exists and contains `elements.nodes` and `elements.edges`.
+- Run `npm run preprocess:data` from `frontend/` after providing both preprocessing CSV inputs.
+- Inspect browser console output for the resolved graph URL and loading error.
+
+### Dev deployment assets return 404
+
+- Build with Vite base `/dev/`.
+- Confirm files were uploaded to S3 prefix `pa_connection/dev`.
+- Confirm CloudFront invalidation includes `/dev/*`.
+
+### Workshop button is hidden
+
+- This is expected when `frontend/public/data/workshop_selection.csv` is absent.
+- When supplied, verify the CSV headers are `Organization Name` and `Org ID`.
