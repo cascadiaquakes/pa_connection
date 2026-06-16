@@ -69,6 +69,53 @@ export function renderColorLegend(
     );
 }
 
+function shapeClassName(shape) {
+    return `node-shape-swatch node-shape-swatch-${String(shape ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")}`;
+}
+
+export function renderNodeShapeLegend(
+    element,
+    {
+        title = "Node Shape",
+        values = [],
+        shapes = {},
+        fallbackShape = "ellipse",
+    } = {}
+) {
+    const doc = element.ownerDocument ?? document;
+    const items = values.map((value) => {
+        const shape = shapes[value] ?? fallbackShape;
+        return createElement(
+            doc,
+            "div",
+            { className: "color-legend-item" },
+            [
+                createElement(doc, "span", {
+                    className: shapeClassName(shape),
+                    attributes: { "aria-hidden": "true" },
+                }),
+                createElement(doc, "span", {
+                    className: "color-legend-label",
+                    text: value,
+                }),
+            ]
+        );
+    });
+
+    element.replaceChildren(
+        createElement(doc, "div", {
+            className: "color-legend-title",
+            text: `${title} legend`,
+        }),
+        createElement(doc, "div", {
+            className: "color-legend-items",
+        }, items)
+    );
+}
+
 export function updateNodeColorLegend(cy, nodeColorMode, { legendElId = "nodeColorLegend" } = {}) {
     const el = document.getElementById(legendElId);
     if (!el) return;
@@ -98,6 +145,36 @@ export function updateNodeColorLegend(cy, nodeColorMode, { legendElId = "nodeCol
     const title = spec.title ?? "Legend";
     const colors = spec.colors ?? {};
     renderColorLegend(el, { title, values, colors });
+
+    el.hidden = false;
+}
+
+export function updateNodeShapeLegend(cy, { legendElId = "nodeShapeLegend" } = {}) {
+    const el = document.getElementById(legendElId);
+    if (!el) return;
+
+    const spec = visualSpec.nodeShapes;
+    if (!spec) {
+        el.hidden = true;
+        clearElement(el);
+        return;
+    }
+
+    const observedValues = collectObservedValues(cy, spec.dataKey);
+    const values = orderedLegendValues(spec, observedValues);
+
+    if (values.length === 0) {
+        el.hidden = true;
+        clearElement(el);
+        return;
+    }
+
+    renderNodeShapeLegend(el, {
+        title: spec.title,
+        values,
+        shapes: spec.shapes,
+        fallbackShape: spec.fallbackShape,
+    });
 
     el.hidden = false;
 }

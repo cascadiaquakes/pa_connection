@@ -136,6 +136,36 @@
     border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
+.node-shape-swatch {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    background: #6b7280;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.node-shape-swatch-ellipse {
+    border-radius: 999px;
+}
+
+.node-shape-swatch-round-rectangle {
+    width: 18px;
+    height: 13px;
+    border-radius: 4px;
+}
+
+.node-shape-swatch-hexagon {
+    width: 17px;
+    height: 15px;
+    clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+
+.node-shape-swatch-diamond {
+    width: 13px;
+    height: 13px;
+    transform: rotate(45deg);
+}
+
 .color-legend-label {
     min-width: 0;
     overflow-wrap: anywhere;

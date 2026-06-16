@@ -57,6 +57,8 @@ jobs:
           echo "Deploying to s3://$S3_BUCKET/$S3_PREFIX/"
           aws s3 sync frontend/dist/ "s3://$S3_BUCKET/$S3_PREFIX/" \
             --delete \
+            --exclude "data" \
+            --exclude "data/*" \
             --cache-control "no-cache, no-store, must-revalidate"
 
       # ── Invalidate CloudFront ─────────────────────────────────

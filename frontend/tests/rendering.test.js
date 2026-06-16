@@ -8,7 +8,7 @@ import {
     setRenderedHtml,
 } from "../src/info/infoRender.js";
 import { highlightedTextSegments } from "../src/ui/dom.js";
-import { renderColorLegend } from "../src/ui/colorLegend.js";
+import { renderColorLegend, renderNodeShapeLegend } from "../src/ui/colorLegend.js";
 import { renderSearchResults } from "../src/ui/searchTab.js";
 
 class FakeNode {
@@ -142,4 +142,18 @@ test("legend rendering keeps category labels as literal DOM text", () => {
         item.children[1].textContent,
         `Provider <img onerror="bad">`
     );
+});
+
+test("shape legend rendering keeps node type labels as literal DOM text", () => {
+    const documentRef = new FakeDocument();
+    const container = documentRef.createElement("div");
+
+    renderNodeShapeLegend(container, {
+        values: [`Organization <script>`],
+        shapes: { [`Organization <script>`]: "round-rectangle" },
+    });
+
+    const item = container.children[1].children[0];
+    assert.match(item.children[0].className, /node-shape-swatch-round-rectangle/);
+    assert.equal(item.children[1].textContent, `Organization <script>`);
 });

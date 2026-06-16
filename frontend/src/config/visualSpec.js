@@ -1,5 +1,7 @@
 import { NODE_DIMENSIONS } from "./nodeDimensions.js";
 
+const nodeTypeDimension = NODE_DIMENSIONS.find((dimension) => dimension.key === "nodeType");
+
 export const visualSpec = {
     nodes: Object.fromEntries(
         NODE_DIMENSIONS.map((dimension) => [
@@ -13,6 +15,21 @@ export const visualSpec = {
             },
         ])
     ),
+    nodeShapes: {
+        dataKey: "nodeTypePrimary",
+        fallbackShape: "ellipse",
+        order: nodeTypeDimension?.order ?? [],
+        shapes: {
+            Hub: "hexagon",
+            Organization: "round-rectangle",
+            Program: "diamond",
+            Tribe: "ellipse",
+            tribe: "ellipse",
+            FirstNation: "ellipse",
+            Other: "ellipse",
+        },
+        title: "Node Shape",
+    },
 
     edges: {
         relType: {

@@ -26,7 +26,7 @@ import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
 import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
 import { initSidebarResize } from "./ui/sidebarResize.js";
-import { updateNodeColorLegend } from "./ui/colorLegend.js";
+import { updateNodeColorLegend, updateNodeShapeLegend } from "./ui/colorLegend.js";
 import { initInfoModal } from "./ui/infoModal.js";
 
 function showFatal(err) {
@@ -68,6 +68,9 @@ function applyAppState(cy, state, controls, previousState = null) {
     }
     if (update.nodeColorChanged) {
         updateNodeColorLegend(cy, nodeColorMode);
+    }
+    if (update.viewChanged) {
+        updateNodeShapeLegend(cy);
     }
     updateGraphInfo(cy, state);
 
