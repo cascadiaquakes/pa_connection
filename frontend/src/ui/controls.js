@@ -33,15 +33,6 @@ const NODE_FILTER_SPECS = [
         primaryKey: "governanceLevelPrimary",
     },
     {
-        containerId: "functionalDomainFilters",
-        title: "Functional Domain",
-        visualKey: "functionalDomain",
-        stateKey: "allowedFunctionalDomains",
-        logKey: "functionalDomains",
-        arrayKey: "functionalDomains",
-        primaryKey: "functionalDomainPrimary",
-    },
-    {
         containerId: "roleFilters",
         title: "Role",
         visualKey: "role",
@@ -97,15 +88,6 @@ export const NODE_SELECTION_SPECS = [
         logKey: "selectionGovernanceLevels",
         arrayKey: "governanceLevels",
         primaryKey: "governanceLevelPrimary",
-    },
-    {
-        containerId: "selectionFunctionalDomainFilters",
-        title: "Functional Domain",
-        visualKey: "functionalDomain",
-        stateKey: "selectedFunctionalDomains",
-        logKey: "selectionFunctionalDomains",
-        arrayKey: "functionalDomains",
-        primaryKey: "functionalDomainPrimary",
     },
     {
         containerId: "selectionRoleFilters",
@@ -182,9 +164,11 @@ function renderChecklist(
 ) {
     container.innerHTML = "";
 
+    const accordion = collapsible ? document.createElement("div") : null;
     const listParent = collapsible ? document.createElement("details") : container;
     if (collapsible) {
-        listParent.className = "filter-accordion";
+        accordion.className = "filter-accordion";
+        listParent.className = "filter-accordion-details";
         listParent.open = defaultOpen;
     }
 
@@ -230,10 +214,11 @@ function renderChecklist(
         chevron.setAttribute("aria-hidden", "true");
 
         summary.appendChild(titleEl);
-        summary.appendChild(actions);
         summary.appendChild(chevron);
         listParent.appendChild(summary);
-        container.appendChild(listParent);
+        accordion.appendChild(listParent);
+        accordion.appendChild(actions);
+        container.appendChild(accordion);
     } else {
         // --- Controls row (All / None) ---
         const controls = document.createElement("div");
@@ -412,8 +397,8 @@ export function initControls(cy, { onChange }) {
         const rows = await loadWorkshopSelection({ workshopUrl });
         const names = rows
             .map((row) => {
-                const csvName = String(row["Organization Name"] ?? "").trim();
-                const csvId = String(row["Org ID"] ?? "").trim();
+                const csvName = String(row.name ?? "").trim();
+                const csvId = String(row.node_id ?? "").trim();
                 return (
                     orgNameById.get(normalizeLookupValue(csvId)) ??
                     orgNameByNormalizedName.get(normalizeLookupValue(csvName)) ??

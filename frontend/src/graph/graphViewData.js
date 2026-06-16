@@ -32,7 +32,6 @@ function nodePassesFilters(
         allowedGeos,
         allowedNodeTypes,
         allowedGovernanceLevels,
-        allowedFunctionalDomains,
         allowedRoles,
         allowedLifelines,
     }
@@ -46,12 +45,6 @@ function nodePassesFilters(
             allowedGovernanceLevels,
             "governanceLevels",
             "governanceLevelPrimary"
-        ) &&
-        matchesAllowed(
-            nodeData,
-            allowedFunctionalDomains,
-            "functionalDomains",
-            "functionalDomainPrimary"
         ) &&
         matchesAllowed(nodeData, allowedRoles, "roleTags", "rolePrimary") &&
         matchesAllowed(nodeData, allowedLifelines, "lifelineTags", "femaLifelinePrimary")
@@ -70,7 +63,6 @@ export function deriveGraphView(
         allowedGeos = new Set(),
         allowedNodeTypes = new Set(),
         allowedGovernanceLevels = new Set(),
-        allowedFunctionalDomains = new Set(),
         allowedRoles = new Set(),
         allowedLifelines = new Set(),
         allowedRelTypes = new Set(),
@@ -82,7 +74,6 @@ export function deriveGraphView(
     allowedGeos = asSet(allowedGeos);
     allowedNodeTypes = asSet(allowedNodeTypes);
     allowedGovernanceLevels = asSet(allowedGovernanceLevels);
-    allowedFunctionalDomains = asSet(allowedFunctionalDomains);
     allowedRoles = asSet(allowedRoles);
     allowedLifelines = asSet(allowedLifelines);
     allowedRelTypes = asSet(allowedRelTypes);
@@ -97,7 +88,6 @@ export function deriveGraphView(
         allowedGeos,
         allowedNodeTypes,
         allowedGovernanceLevels,
-        allowedFunctionalDomains,
         allowedRoles,
         allowedLifelines,
     }));

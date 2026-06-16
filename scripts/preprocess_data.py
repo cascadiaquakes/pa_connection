@@ -217,9 +217,9 @@ def main():
         parser.error("expected at most three positional paths: nodes, edges, output")
 
     default_paths = [
-        "frontend/public/data/organizations_clean.csv",
-        "frontend/public/data/edges_clean.csv",
-        "frontend/public/data/graph.json",
+        "./scripts/organizations_clean.csv",
+        "./scripts/edges_clean.csv",
+        "./scripts/out/graph.json",
     ]
     positional_paths = [*args.paths, *default_paths[len(args.paths):]]
 
