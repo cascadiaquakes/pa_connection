@@ -215,6 +215,19 @@
                         <h3>Export graph</h3>
                         <button id="btnExportJson" type="button">Download all JSON</button>
 
+                        <div class="export-group" aria-label="Image export">
+                            <label class="row" for="exportImageScale">
+                                <span>PNG resolution</span>
+                                <select id="exportImageScale">
+                                    <option value="2">2x</option>
+                                    <option value="4" selected>4x</option>
+                                    <option value="6">6x</option>
+                                    <option value="8">8x</option>
+                                </select>
+                            </label>
+                            <button id="btnExportPng" type="button">Download full graph PNG</button>
+                        </div>
+
                         <div id="exportStatus" class="hint export-status"></div>
                     </section>
                 </div>
