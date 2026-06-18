@@ -2,6 +2,8 @@ function cloneData(data = {}) {
     return JSON.parse(JSON.stringify(data));
 }
 
+const PNG_EXPORT_PADDING = 80;
+
 function downloadJson(filename, payload) {
     const jsonText = JSON.stringify(payload, null, 2);
     const blob = new Blob([jsonText], { type: "application/json" });
@@ -59,12 +61,62 @@ function readScale(selectEl) {
     return Number.isFinite(scale) && scale > 0 ? scale : 4;
 }
 
+function loadImageBlob(blob) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(blob);
+        const image = new Image();
+
+        image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(image);
+        };
+        image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("Could not load rendered PNG."));
+        };
+
+        image.src = url;
+    });
+}
+
+function canvasToPngBlob(canvas) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Could not encode padded PNG."));
+        }, "image/png");
+    });
+}
+
+async function addPngPadding(blob, { scale, padding }) {
+    const image = await loadImageBlob(blob);
+    const scaledPadding = Math.round(padding * scale);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (!context) throw new Error("Could not create PNG canvas.");
+
+    canvas.width = image.naturalWidth + scaledPadding * 2;
+    canvas.height = image.naturalHeight + scaledPadding * 2;
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, scaledPadding, scaledPadding);
+
+    return canvasToPngBlob(canvas);
+}
+
 async function exportFullGraphPng(cy, { scale }) {
-    return cy.png({
+    const graphBlob = await cy.png({
         output: "blob-promise",
         full: true,
         scale,
         bg: "#ffffff",
+    });
+
+    return addPngPadding(graphBlob, {
+        scale,
+        padding: PNG_EXPORT_PADDING,
     });
 }
 
