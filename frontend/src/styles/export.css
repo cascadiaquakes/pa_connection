@@ -1,3 +1,11 @@
+.export-group {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #e3e7eb;
+}
+
 .export-status {
     margin-top: 10px;
 }

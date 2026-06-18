@@ -5,6 +5,10 @@ function cloneData(data = {}) {
 function downloadJson(filename, payload) {
     const jsonText = JSON.stringify(payload, null, 2);
     const blob = new Blob([jsonText], { type: "application/json" });
+    downloadBlob(filename, blob);
+}
+
+function downloadBlob(filename, blob) {
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
@@ -45,11 +49,32 @@ function defaultFilename() {
     return `graph-export-all-${stamp}.json`;
 }
 
+function defaultPngFilename(scale) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return `graph-export-full-${scale}x-${stamp}.png`;
+}
+
+function readScale(selectEl) {
+    const scale = Number(selectEl?.value);
+    return Number.isFinite(scale) && scale > 0 ? scale : 4;
+}
+
+async function exportFullGraphPng(cy, { scale }) {
+    return cy.png({
+        output: "blob-promise",
+        full: true,
+        scale,
+        bg: "#ffffff",
+    });
+}
+
 export function initExportTab(cy) {
     const btnEl = document.getElementById("btnExportJson");
+    const btnPngEl = document.getElementById("btnExportPng");
+    const imageScaleEl = document.getElementById("exportImageScale");
     const statusEl = document.getElementById("exportStatus");
 
-    if (!btnEl || !statusEl) {
+    if (!btnEl || !btnPngEl || !imageScaleEl || !statusEl) {
         console.warn("[export] Missing export tab elements");
         return;
     }
@@ -62,6 +87,27 @@ export function initExportTab(cy) {
         const payload = makeExportPayload({ nodes, edges });
         downloadJson(defaultFilename(), payload);
         statusEl.textContent = `Exported ${nodes.length} nodes, ${edges.length} edges.`;
+    });
+
+    btnPngEl.addEventListener("click", async () => {
+        const scale = readScale(imageScaleEl);
+        const previousText = btnPngEl.textContent;
+
+        btnPngEl.disabled = true;
+        btnPngEl.textContent = "Rendering PNG...";
+        statusEl.textContent = `Rendering full graph PNG at ${scale}x.`;
+
+        try {
+            const blob = await exportFullGraphPng(cy, { scale });
+            downloadBlob(defaultPngFilename(scale), blob);
+            statusEl.textContent = `Exported full graph PNG at ${scale}x.`;
+        } catch (error) {
+            console.error("[export] PNG export failed", error);
+            statusEl.textContent = "PNG export failed. Try a lower resolution.";
+        } finally {
+            btnPngEl.disabled = false;
+            btnPngEl.textContent = previousText;
+        }
     });
 
     const rawElements = cy.scratch("_rawElements") ?? [];
