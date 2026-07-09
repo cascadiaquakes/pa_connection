@@ -1,20 +1,11 @@
-import { renderEmptyState, renderMultiSelection } from "./infoRender.js";
+import {
+    renderEmptyState,
+    renderMultiSelection,
+    setRenderedHtml,
+} from "./infoRender.js";
 import { renderNodeInfo, renderNodeSummary } from "./nodeInfo.js";
 import { renderEdgeInfo, renderEdgeSummary } from "./edgeInfo.js";
-
-function selectSingleNode(cy, nodeId) {
-    cy.batch(() => {
-        cy.elements(":selected").unselect();
-        const node = cy.getElementById(nodeId);
-        if (node.nonempty()) {
-            node.select();
-            cy.animate({
-                center: { eles: node },
-                duration: 250,
-            });
-        }
-    });
-}
+import { selectNodeById } from "../graph/graphSelection.js";
 
 export function initSelectionInfo(
     cy,
@@ -38,7 +29,7 @@ export function initSelectionInfo(
         if (!nodeId) return;
 
         evt.preventDefault();
-        selectSingleNode(cy, nodeId);
+        selectNodeById(cy, nodeId, { center: true });
     });
 
     const render = () => {
@@ -49,33 +40,33 @@ export function initSelectionInfo(
 
         if (total === 0) {
             const empty = renderEmptyState();
-            el.innerHTML = empty;
-            modalEl.innerHTML = empty;
+            setRenderedHtml(el, empty);
+            setRenderedHtml(modalEl, empty);
             return;
         }
 
         if (total > 1) {
             const multi = renderMultiSelection(selNodes, selEdges);
-            el.innerHTML = multi;
-            modalEl.innerHTML = multi;
+            setRenderedHtml(el, multi);
+            setRenderedHtml(modalEl, multi);
             return;
         }
 
         if (selNodes.length === 1) {
-            el.innerHTML = renderNodeSummary(selNodes[0]);
-            modalEl.innerHTML = renderNodeInfo(selNodes[0]);
+            setRenderedHtml(el, renderNodeSummary(selNodes[0]));
+            setRenderedHtml(modalEl, renderNodeInfo(selNodes[0]));
             return;
         }
 
         if (selEdges.length === 1) {
-            el.innerHTML = renderEdgeSummary(selEdges[0]);
-            modalEl.innerHTML = renderEdgeInfo(selEdges[0]);
+            setRenderedHtml(el, renderEdgeSummary(selEdges[0]));
+            setRenderedHtml(modalEl, renderEdgeInfo(selEdges[0]));
             return;
         }
 
         const empty = renderEmptyState();
-        el.innerHTML = empty;
-        modalEl.innerHTML = empty;
+        setRenderedHtml(el, empty);
+        setRenderedHtml(modalEl, empty);
     };
 
     render();

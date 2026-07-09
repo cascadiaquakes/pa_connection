@@ -1,151 +1,77 @@
 import { uniq } from "../data/normalize.js";
+import {
+    NODE_DIMENSIONS,
+    NODE_FILTER_SPECS,
+    NODE_SELECTION_SPECS,
+} from "../config/nodeDimensions.js";
+import { createAppState } from "../config/appState.js";
 import { visualSpec } from "../config/visualSpec.js";
 import { deriveGraphView } from "../graph/graphViewData.js";
+import { loadWorkshopSelection } from "../data/dataloader.js";
+import { publicAssetUrl } from "../data/publicAssets.js";
 
-const NODE_FILTER_SPECS = [
-    {
-        containerId: "orgCategoryFilters",
-        title: "Organization Category",
-        visualKey: "orgCat",
-        stateKey: "allowedOrgCategories",
-        logKey: "orgCats",
-        arrayKey: "orgTypes",
-        primaryKey: "orgTypePrimary",
-    },
-    {
-        containerId: "nodeTypeFilters",
-        title: "Node Type",
-        visualKey: "nodeType",
-        stateKey: "allowedNodeTypes",
-        logKey: "nodeTypes",
-        arrayKey: "nodeTypes",
-        primaryKey: "nodeTypePrimary",
-    },
-    {
-        containerId: "governanceFilters",
-        title: "Governance Level",
-        visualKey: "governance",
-        stateKey: "allowedGovernanceLevels",
-        logKey: "governanceLevels",
-        arrayKey: "governanceLevels",
-        primaryKey: "governanceLevelPrimary",
-    },
-    {
-        containerId: "functionalDomainFilters",
-        title: "Functional Domain",
-        visualKey: "functionalDomain",
-        stateKey: "allowedFunctionalDomains",
-        logKey: "functionalDomains",
-        arrayKey: "functionalDomains",
-        primaryKey: "functionalDomainPrimary",
-    },
-    {
-        containerId: "roleFilters",
-        title: "Role",
-        visualKey: "role",
-        stateKey: "allowedRoles",
-        logKey: "roles",
-        arrayKey: "roleTags",
-        primaryKey: "rolePrimary",
-    },
-    {
-        containerId: "lifelineFilters",
-        title: "FEMA Lifeline",
-        visualKey: "lifeline",
-        stateKey: "allowedLifelines",
-        logKey: "lifelines",
-        arrayKey: "lifelineTags",
-        primaryKey: "femaLifelinePrimary",
-    },
-    {
-        containerId: "geoFilters",
-        title: "Geographic Area",
-        visualKey: "geo",
-        stateKey: "allowedGeos",
-        logKey: "geos",
-        arrayKey: "geoTags",
-        primaryKey: "geoPrimary",
-    },
-];
+function renderControlContainers(parentId, specs) {
+    const parent = document.getElementById(parentId);
+    if (!parent) {
+        console.warn(`[controls] Missing #${parentId}`);
+        return;
+    }
 
-export const NODE_SELECTION_SPECS = [
-    {
-        containerId: "selectionOrgCategoryFilters",
-        title: "Organization Category",
-        visualKey: "orgCat",
-        stateKey: "selectedOrgCategories",
-        logKey: "selectionOrgCats",
-        arrayKey: "orgTypes",
-        primaryKey: "orgTypePrimary",
-    },
-    {
-        containerId: "selectionNodeTypeFilters",
-        title: "Node Type",
-        visualKey: "nodeType",
-        stateKey: "selectedNodeTypes",
-        logKey: "selectionNodeTypes",
-        arrayKey: "nodeTypes",
-        primaryKey: "nodeTypePrimary",
-    },
-    {
-        containerId: "selectionGovernanceFilters",
-        title: "Governance Level",
-        visualKey: "governance",
-        stateKey: "selectedGovernanceLevels",
-        logKey: "selectionGovernanceLevels",
-        arrayKey: "governanceLevels",
-        primaryKey: "governanceLevelPrimary",
-    },
-    {
-        containerId: "selectionFunctionalDomainFilters",
-        title: "Functional Domain",
-        visualKey: "functionalDomain",
-        stateKey: "selectedFunctionalDomains",
-        logKey: "selectionFunctionalDomains",
-        arrayKey: "functionalDomains",
-        primaryKey: "functionalDomainPrimary",
-    },
-    {
-        containerId: "selectionRoleFilters",
-        title: "Role",
-        visualKey: "role",
-        stateKey: "selectedRoles",
-        logKey: "selectionRoles",
-        arrayKey: "roleTags",
-        primaryKey: "rolePrimary",
-    },
-    {
-        containerId: "selectionLifelineFilters",
-        title: "FEMA Lifeline",
-        visualKey: "lifeline",
-        stateKey: "selectedLifelines",
-        logKey: "selectionLifelines",
-        arrayKey: "lifelineTags",
-        primaryKey: "femaLifelinePrimary",
-    },
-    {
-        containerId: "selectionGeoFilters",
-        title: "Geographic Area",
-        visualKey: "geo",
-        stateKey: "selectedGeos",
-        logKey: "selectionGeos",
-        arrayKey: "geoTags",
-        primaryKey: "geoPrimary",
-    },
-    {
-        containerId: "selectionOrganizationFilters",
-        title: "All Organizations",
-        stateKey: "selectedOrganizations",
-        logKey: "selectionOrganizations",
-        primaryKey: "orgName",
-        previewLimit: 5,
-        visibleOnly: true,
-    },
-];
+    parent.replaceChildren(
+        ...specs.map((spec) => {
+            const container = document.createElement("div");
+            container.id = spec.containerId;
+            container.className = "checklist";
+            return container;
+        })
+    );
+}
+
+function renderNodeColorOptions(selectEl) {
+    if (!selectEl) return;
+
+    const selectedValue = selectEl.value || "orgCat";
+    selectEl.replaceChildren(
+        ...NODE_DIMENSIONS.map((dimension) => {
+            const option = document.createElement("option");
+            option.value = dimension.key;
+            option.textContent = dimension.title;
+            return option;
+        }),
+        Object.assign(document.createElement("option"), {
+            value: "none",
+            textContent: "None",
+        })
+    );
+    selectEl.value = selectedValue;
+}
 
 function setAllCheckboxes(container, checked) {
     const boxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
     boxes.forEach((b) => (b.checked = checked));
+}
+
+function normalizeLookupValue(value) {
+    return String(value ?? "").trim().toLowerCase();
+}
+
+function setCheckboxesFromValues(container, checkedValues) {
+    const boxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
+    boxes.forEach((box) => {
+        box.checked = checkedValues.has(box.value);
+    });
+}
+
+function getNodeData(node) {
+    return typeof node.data === "function" ? node.data() : node.data;
+}
+
+function firstRowValue(row, keys) {
+    for (const key of keys) {
+        const value = String(row[key] ?? "").trim();
+        if (value) return value;
+    }
+    return "";
 }
 
 function renderChecklist(
@@ -160,9 +86,10 @@ function renderChecklist(
         previewLimit = null,
         previewExpanded = false,
         checkedValues = null,
+        extraActions = [],
     } = {}
 ) {
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const listParent = collapsible ? document.createElement("details") : container;
     if (collapsible) {
@@ -200,16 +127,11 @@ function renderChecklist(
         titleEl.className = "filter-accordion-title";
         titleEl.textContent = title;
 
-        const actions = document.createElement("span");
-        actions.className = "filter-accordion-actions";
-        actions.appendChild(btnAll);
-        actions.appendChild(btnNone);
         const chevron = document.createElement("span");
         chevron.className = "filter-accordion-chevron";
         chevron.setAttribute("aria-hidden", "true");
 
         summary.appendChild(titleEl);
-        summary.appendChild(actions);
         summary.appendChild(chevron);
         listParent.appendChild(summary);
         container.appendChild(listParent);
@@ -225,6 +147,17 @@ function renderChecklist(
     // --- Checklist items ---
     const list = document.createElement("div");
     list.className = collapsible ? "filter-accordion-body" : "";
+    if (collapsible) {
+        const actions = document.createElement("div");
+        actions.className = "filter-accordion-actions checklist-actions-row";
+        actions.appendChild(btnAll);
+        actions.appendChild(btnNone);
+        for (const action of extraActions) {
+            actions.appendChild(action);
+        }
+        list.appendChild(actions);
+    }
+
     const displayValues = values.length ? values : [""];
     const shouldLimit =
         Number.isInteger(previewLimit) && displayValues.length > previewLimit && !previewExpanded;
@@ -280,7 +213,7 @@ function collectNodeValuesFromNodes(nodes, arrayKey, primaryKey) {
     nodes.forEach((n) => {
         const data = typeof n.data === "function" ? n.data() : n.data;
         const values = data?.[arrayKey];
-        if (Array.isArray(values)) {
+        if (Array.isArray(values) && values.length > 0) {
             all.push(...values.map((x) => String(x ?? "").trim()));
             return;
         }
@@ -328,6 +261,10 @@ export function initControls(cy, { onChange }) {
     const pruneToggleEl = document.getElementById("togglePrune");
     const layoutToggleEl = document.getElementById("toggleLayout");
 
+    renderControlContainers("nodeFilterControls", NODE_FILTER_SPECS);
+    renderControlContainers("nodeSelectionControls", NODE_SELECTION_SPECS);
+    renderNodeColorOptions(nodeColorModeEl);
+
     const filterContainers = NODE_FILTER_SPECS.map((spec) => ({
         ...spec,
         el: document.getElementById(spec.containerId),
@@ -338,6 +275,8 @@ export function initControls(cy, { onChange }) {
     }));
     const visibleOrganizationSpec = selectionContainers.find((spec) => spec.visibleOnly);
     const selectionWarningEl = createSelectionWarning(selectionContainers);
+    const workshopUrl = publicAssetUrl("data/workshop_selection.csv");
+    console.log("[controls] workshop selection URL:", workshopUrl);
 
     for (const spec of filterContainers) {
         if (!spec.el) console.warn(`[controls] Missing #${spec.containerId}`);
@@ -354,7 +293,7 @@ export function initControls(cy, { onChange }) {
             spec.stateKey,
             sortByVisualOrder(
                 collectNodeValues(cy, spec.arrayKey, spec.primaryKey),
-                visualSpec.nodes[spec.visualKey]?.order
+                spec.order
             ),
         ])
     );
@@ -363,7 +302,7 @@ export function initControls(cy, { onChange }) {
             spec.stateKey,
             sortByVisualOrder(
                 collectNodeValues(cy, spec.arrayKey, spec.primaryKey),
-                visualSpec.nodes[spec.visualKey]?.order
+                spec.order
             ),
         ])
     );
@@ -371,6 +310,81 @@ export function initControls(cy, { onChange }) {
         uniq(cy.edges().map((e) => String(e.data("relType") ?? ""))),
         visualSpec.edges.relType.order
     );
+    const orgNameById = new Map();
+    const orgNameByNormalizedName = new Map();
+    Array.from(cy.nodes("[!isGrid]")).forEach((node) => {
+        const data = getNodeData(node);
+        const orgName = String(data?.orgName ?? "").trim();
+        const orgId = String(data?.id ?? "").trim();
+        if (!orgName) return;
+        orgNameByNormalizedName.set(normalizeLookupValue(orgName), orgName);
+        if (orgId) orgNameById.set(normalizeLookupValue(orgId), orgName);
+    });
+
+    let workshopOrganizationNamesPromise = null;
+    let hasWorkshopSelection = null;
+
+    const loadWorkshopOrganizationNames = async () => {
+        const rows = await loadWorkshopSelection({ workshopUrl });
+        const names = rows
+            .map((row) => {
+                const csvName = firstRowValue(row, ["name", "Organization Name"]);
+                const csvId = firstRowValue(row, ["node_id", "Org ID"]);
+                return (
+                    orgNameById.get(normalizeLookupValue(csvId)) ??
+                    orgNameByNormalizedName.get(normalizeLookupValue(csvName)) ??
+                    csvName
+                );
+            })
+            .filter(Boolean);
+        return new Set(names);
+    };
+
+    const getWorkshopOrganizationNames = () => {
+        if (!workshopOrganizationNamesPromise) {
+            workshopOrganizationNamesPromise = loadWorkshopOrganizationNames();
+        }
+        return workshopOrganizationNamesPromise;
+    };
+
+    const updateWorkshopButtonVisibility = (button) => {
+        button.hidden = hasWorkshopSelection !== true;
+        getWorkshopOrganizationNames()
+            .then(() => {
+                hasWorkshopSelection = true;
+                button.hidden = false;
+            })
+            .catch((err) => {
+                hasWorkshopSelection = false;
+                button.hidden = true;
+                console.warn("[controls] Workshop selection file is unavailable:", err);
+            });
+    };
+
+    const applyWorkshopSelection = async () => {
+        if (!visibleOrganizationSpec?.el) return;
+        try {
+            const workshopOrganizationNames = await getWorkshopOrganizationNames();
+            setCheckboxesFromValues(visibleOrganizationSpec.el, workshopOrganizationNames);
+            emit();
+        } catch (err) {
+            console.error("[controls] Failed to apply workshop selection:", err);
+        }
+    };
+
+    const createWorkshopButton = () => {
+        const btnWorkshop = document.createElement("button");
+        btnWorkshop.type = "button";
+        btnWorkshop.textContent = "Workshop";
+        btnWorkshop.className = "checklist-action";
+        btnWorkshop.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            applyWorkshopSelection();
+        });
+        updateWorkshopButtonVisibility(btnWorkshop);
+        return btnWorkshop;
+    };
 
     for (const spec of filterContainers) {
         const values = nodeFilterValues[spec.stateKey] ?? [];
@@ -390,7 +404,7 @@ export function initControls(cy, { onChange }) {
             selectionContainers.map((spec) => [spec.stateKey, selectedFromChecklist(spec.el)])
         );
 
-        return {
+        return createAppState({
             nodeColorMode: nodeColorModeEl?.value ?? "none",
             edgeDisplayMode: edgeDisplayModeEl?.value ?? "none",
             ...nodeFilterState,
@@ -398,7 +412,7 @@ export function initControls(cy, { onChange }) {
             allowedRelTypes: selectedFromChecklist(relTypeFiltersEl),
             prune: pruneToggleEl?.checked ?? true,
             layoutMode: layoutToggleEl?.checked ? "organic" : "grid",
-        };
+        });
     };
 
     const updateVisibleOrganizationSelection = (state) => {
@@ -420,6 +434,7 @@ export function initControls(cy, { onChange }) {
             previewLimit: visibleOrganizationSpec.previewLimit,
             previewExpanded: visibleOrganizationSpec.el.dataset.previewExpanded === "true",
             checkedValues: selectedVisible,
+            extraActions: [createWorkshopButton()],
         });
     };
 
@@ -447,6 +462,7 @@ export function initControls(cy, { onChange }) {
                 title: spec.title,
                 defaultOpen: false,
                 previewLimit: spec.previewLimit,
+                extraActions: spec.visibleOnly ? [createWorkshopButton()] : [],
             });
         }
     }

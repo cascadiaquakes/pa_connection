@@ -7,6 +7,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def clean(value):
     return str(value or "").strip()
@@ -69,6 +71,18 @@ def read_csv_rows(csv_path):
     return rows
 
 
+def resolve_path(value):
+    path = Path(value)
+    return path.resolve() if path.is_absolute() else (REPO_ROOT / path).resolve()
+
+
+def display_path(path):
+    try:
+        return str(path.relative_to(REPO_ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(path)
+
+
 def build_elements_from_rows(node_rows, edge_rows):
     seen_ids = set()
     skipped_nodes = []
@@ -92,7 +106,6 @@ def build_elements_from_rows(node_rows, edge_rows):
         geo_tags = parse_json_array_field(row, "geoTags")
         node_types = parse_json_array_field(row, "nodeTypes")
         governance_levels = parse_json_array_field(row, "governanceLevels")
-        functional_domains = parse_json_array_field(row, "functionalDomains")
         role_tags = parse_json_array_field(row, "roleTags")
         lifeline_tags = parse_json_array_field(row, "lifelineTags")
 
@@ -110,8 +123,6 @@ def build_elements_from_rows(node_rows, edge_rows):
                     "nodeTypes": node_types,
                     "governanceLevelPrimary": clean(row.get("governanceLevelPrimary")),
                     "governanceLevels": governance_levels,
-                    "functionalDomainPrimary": clean(row.get("functionalDomainPrimary")),
-                    "functionalDomains": functional_domains,
                     "rolePrimary": clean(row.get("rolePrimary")),
                     "roleTags": role_tags,
                     "femaLifelinePrimary": clean(row.get("femaLifelinePrimary")),
@@ -188,15 +199,30 @@ def build_elements_from_rows(node_rows, edge_rows):
 
 def main():
     parser = argparse.ArgumentParser(description="Preprocess CSV graph data into graph.json")
-    parser.add_argument("--nodes", default="public/data/organizations_clean.csv")
-    parser.add_argument("--edges", default="public/data/edges_clean.csv")
-    parser.add_argument("--out", default="public/data/graph.json")
+    parser.add_argument(
+        "paths",
+        nargs="*",
+        metavar="PATH",
+        help="Optional positional paths: nodes CSV, edges CSV, output JSON",
+    )
+    parser.add_argument("--nodes")
+    parser.add_argument("--edges")
+    parser.add_argument("--out")
     args = parser.parse_args()
 
-    root = Path.cwd()
-    nodes_csv = (root / args.nodes).resolve()
-    edges_csv = (root / args.edges).resolve()
-    out_file = (root / args.out).resolve()
+    if len(args.paths) > 3:
+        parser.error("expected at most three positional paths: nodes, edges, output")
+
+    default_paths = [
+        "./scripts/organizations_clean.csv",
+        "./scripts/edges_clean.csv",
+        "./scripts/out/graph.json",
+    ]
+    positional_paths = [*args.paths, *default_paths[len(args.paths):]]
+
+    nodes_csv = resolve_path(args.nodes or positional_paths[0])
+    edges_csv = resolve_path(args.edges or positional_paths[1])
+    out_file = resolve_path(args.out or positional_paths[2])
 
     node_rows = read_csv_rows(nodes_csv)
     edge_rows = read_csv_rows(edges_csv)
@@ -206,8 +232,8 @@ def main():
         "schemaVersion": 1,
         "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "sourceFiles": {
-            "nodesCsv": str(nodes_csv.relative_to(root)).replace("\\", "/"),
-            "edgesCsv": str(edges_csv.relative_to(root)).replace("\\", "/"),
+            "nodesCsv": display_path(nodes_csv),
+            "edgesCsv": display_path(edges_csv),
         },
         "diagnostics": diagnostics,
         "elements": {"nodes": nodes, "edges": edges},
@@ -217,7 +243,7 @@ def main():
     out_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     print(
-        f"[preprocess-data] wrote {out_file.relative_to(root)} "
+        f"[preprocess-data] wrote {display_path(out_file)} "
         f"({len(nodes)} nodes, {len(edges)} edges)"
     )
 

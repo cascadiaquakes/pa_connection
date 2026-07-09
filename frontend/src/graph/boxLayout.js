@@ -1,5 +1,4 @@
 import { layoutConfig } from "../config/layoutConfig.js";
-import { computeCellGridForWidth, computeGridGeometry } from "./gridGeometry.js";
 
 function sortCellNodes(cellNodes) {
     return [...cellNodes].sort((a, b) => {
@@ -13,17 +12,18 @@ function sortCellNodes(cellNodes) {
     });
 }
 
-export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
+export function applyBoxPresetLayout(
+    cy,
+    geometry,
+    cfg = layoutConfig
+) {
     const {
         nodes,
-        orgValues,
-        geoValues,
-        xBreaks,
-        yBreaks,
         xIndex,
         yIndex,
+        cells,
         bounds,
-    } = computeGridGeometry(cy, cfg);
+    } = geometry;
 
     cy.batch(() => {
         // Group nodes by cell
@@ -41,43 +41,18 @@ export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
 
         // Place nodes within each cell using a geometry-driven grid
         for (const [key, rawCellNodes] of cellMap.entries()) {
-            const [ixStr, iyStr] = key.split("::");
-            const ix = Number(ixStr);
-            const iy = Number(iyStr);
-
-            const x0 = xBreaks[ix];
-            const x1 = xBreaks[ix + 1];
-            const y0 = yBreaks[iy];
-            const y1 = yBreaks[iy + 1];
-
-            const cellW = Math.max(1, x1 - x0);
-            const cellH = Math.max(1, y1 - y0);
-
-            // padding inside the box so nodes do not sit on the border lines
-            const padX = Math.min(cfg.cellPadding.x ?? 24, cellW * (cfg.cellPadding.xFrac ?? 0.12));
-            const padY = Math.min(cfg.cellPadding.y ?? 20, cellH * (cfg.cellPadding.yFrac ?? 0.12));
-
-            const xmin = x0 + padX;
-            const xmax = x1 - padX;
-            const ymin = y0 + padY;
-            const ymax = y1 - padY;
-
-            const innerW = Math.max(1, xmax - xmin);
-            const innerH = Math.max(1, ymax - ymin);
+            const cell = cells.get(key);
+            if (!cell) continue;
 
             const cellNodes = sortCellNodes(rawCellNodes);
             const k = cellNodes.length;
             if (k === 0) continue;
 
-            // `computeCellGridForWidth` decides how many internal columns this box gets.
-            // If you want boxes to spread wider before becoming taller, tune:
-            // - layoutConfig.bounds.x1
-            // - layoutConfig.nodeGrid.targetCellW
-            // - layoutConfig.nodeGrid.minCellW
-            // - layoutConfig.nodeGrid.maxCols
-            const { cols, rows, slotW, slotH } = computeCellGridForWidth(innerW, k, cfg.nodeGrid ?? {});
+            const { cols, rows, slotW, slotH } = cell.nodeGrid;
             const contentH = rows * slotH;
-            const startY = ymin + Math.max(0, (innerH - contentH) / 2);
+            const startY =
+                cell.inner.y0 +
+                Math.max(0, (cell.inner.height - contentH) / 2);
 
             for (let idx = 0; idx < k; idx++) {
                 const n = cellNodes[idx];
@@ -89,9 +64,9 @@ export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
                 const itemsInThisRow = isLastRow ? (k - r * cols) : cols;
                 const contentW = itemsInThisRow * slotW;
 
-                // Center each row within the box.
-                // Earlier rows use `cols`, the last row may have fewer items.
-                const startX = xmin + Math.max(0, (innerW - contentW) / 2);
+                const startX =
+                    cell.inner.x0 +
+                    Math.max(0, (cell.inner.width - contentW) / 2);
 
                 const x = startX + idxInRow * slotW + slotW / 2;
                 const y = startY + r * slotH + slotH / 2;
@@ -115,5 +90,5 @@ export function applyBoxPresetLayout(cy, cfg = layoutConfig) {
         });
     }
 
-    return { orgValues, geoValues, xBreaks, yBreaks };
+    return geometry;
 }

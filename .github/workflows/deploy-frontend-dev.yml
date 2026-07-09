@@ -41,7 +41,7 @@ jobs:
 
       - name: Build frontend (dev)
         working-directory: frontend
-        run: npm run build
+        run: npm run build -- --base=/dev/
 
       # ── Authenticate to AWS via OIDC ──────────────────────────
       - name: Configure AWS credentials (OIDC)
@@ -57,6 +57,8 @@ jobs:
           echo "Deploying to s3://$S3_BUCKET/$S3_PREFIX/"
           aws s3 sync frontend/dist/ "s3://$S3_BUCKET/$S3_PREFIX/" \
             --delete \
+            --exclude "data" \
+            --exclude "data/*" \
             --cache-control "no-cache, no-store, must-revalidate"
 
       # ── Invalidate CloudFront ─────────────────────────────────

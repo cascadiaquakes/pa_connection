@@ -1,4 +1,8 @@
-import { isVisible, renderCard } from "./infoRender.js";
+import {
+    NODE_DIMENSION_BY_KEY,
+    NODE_FILTER_SPECS,
+} from "../config/nodeDimensions.js";
+import { isVisible, renderCard, setRenderedHtml } from "./infoRender.js";
 
 function countLabel(setOrNull, singular, plural = `${singular}s`) {
     const n = setOrNull?.size ?? 0;
@@ -18,25 +22,7 @@ function formatLayoutMode(layoutMode) {
 }
 
 function formatNodeColorMode(mode) {
-    switch (mode) {
-        case "orgType":
-            return "Organization type";
-        case "nodeType":
-            return "Node type";
-        case "governance":
-            return "Governance level";
-        case "functionalDomain":
-            return "Functional domain";
-        case "role":
-            return "Role";
-        case "lifeline":
-            return "FEMA lifeline";
-        case "geo":
-            return "Geography";
-        case "none":
-        default:
-            return "None";
-    }
+    return NODE_DIMENSION_BY_KEY[mode]?.title ?? "None";
 }
 
 function formatEdgeDisplayMode(mode) {
@@ -54,8 +40,7 @@ function formatEdgeDisplayMode(mode) {
 function summarizeGraphStatus(cy, state, staticInfo) {
     const totalNodes = Number(staticInfo.totalNodes || 0);
     const totalEdges = Number(staticInfo.totalEdges || 0);
-    const nodesUrl = staticInfo.nodesUrl || "";
-    const edgesUrl = staticInfo.edgesUrl || "";
+    const sourceUrl = staticInfo.sourceUrl || "";
 
     const visibleNodes = cy.nodes("[!isGrid]").filter((n) => isVisible(n)).length;
     const visibleEdges = cy.edges("[!isGrid]").filter((e) => isVisible(e)).length;
@@ -81,19 +66,19 @@ function summarizeGraphStatus(cy, state, staticInfo) {
     ];
 
     const filterRows = [
-        ["Organization categories", countLabel(state.allowedOrgCategories, "category")],
-        ["Geographies", countLabel(state.allowedGeos, "geography", "geographies")],
-        ["Node types", countLabel(state.allowedNodeTypes, "type")],
-        ["Governance levels", countLabel(state.allowedGovernanceLevels, "level")],
-        ["Functional domains", countLabel(state.allowedFunctionalDomains, "domain")],
-        ["Roles", countLabel(state.allowedRoles, "role")],
-        ["FEMA lifelines", countLabel(state.allowedLifelines, "lifeline")],
+        ...NODE_FILTER_SPECS.map((spec) => [
+            spec.filterStatus.label,
+            countLabel(
+                state[spec.stateKey],
+                spec.filterStatus.singular,
+                spec.filterStatus.plural
+            ),
+        ]),
         ["Relationship types", countLabel(state.allowedRelTypes, "type")],
     ];
 
     const sourceRows = [];
-    if (nodesUrl) sourceRows.push(["Nodes file", nodesUrl]);
-    if (edgesUrl) sourceRows.push(["Edges file", edgesUrl]);
+    if (sourceUrl) sourceRows.push(["Graph file", sourceUrl]);
 
     return { overviewRows, displayRows, filterRows, sourceRows };
 }
@@ -105,8 +90,7 @@ function summarizeGraphStatus(cy, state, staticInfo) {
 export function initGraphInfo({
                                   totalNodes = 0,
                                   totalEdges = 0,
-                                  nodesUrl = "",
-                                  edgesUrl = "",
+                                  sourceUrl = "",
                                   statusElId = "infoStatus",
                                   modalStatusElId = "infoModalStatus",
                               } = {}) {
@@ -119,38 +103,35 @@ export function initGraphInfo({
 
     el.dataset.totalNodes = String(totalNodes);
     el.dataset.totalEdges = String(totalEdges);
-    if (nodesUrl) el.dataset.nodesUrl = nodesUrl;
-    if (edgesUrl) el.dataset.edgesUrl = edgesUrl;
+    if (sourceUrl) el.dataset.sourceUrl = sourceUrl;
     modalEl.dataset.totalNodes = String(totalNodes);
     modalEl.dataset.totalEdges = String(totalEdges);
-    if (nodesUrl) modalEl.dataset.nodesUrl = nodesUrl;
-    if (edgesUrl) modalEl.dataset.edgesUrl = edgesUrl;
+    if (sourceUrl) modalEl.dataset.sourceUrl = sourceUrl;
 
-    el.innerHTML = `
+    setRenderedHtml(el, `
       <div class="md-status md-status-compact">
         ${renderCard("Dataset", [
         ["Organizations", totalNodes],
         ["Relationships", totalEdges],
     ])}
       </div>
-    `;
+    `);
 
-    modalEl.innerHTML = `
+    setRenderedHtml(modalEl, `
       <div class="md-status">
         ${renderCard("Dataset", [
         ["Organizations loaded", totalNodes],
         ["Relationships loaded", totalEdges],
     ])}
         ${
-        nodesUrl || edgesUrl
-            ? renderCard("Source files", [
-                ["Nodes file", nodesUrl],
-                ["Edges file", edgesUrl],
+        sourceUrl
+            ? renderCard("Source file", [
+                ["Graph file", sourceUrl],
             ], { linkifyValues: true })
             : ""
     }
       </div>
-    `;
+    `);
 }
 
 /**
@@ -164,14 +145,13 @@ export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = 
     const staticInfo = {
         totalNodes: el.dataset.totalNodes,
         totalEdges: el.dataset.totalEdges,
-        nodesUrl: el.dataset.nodesUrl,
-        edgesUrl: el.dataset.edgesUrl,
+        sourceUrl: el.dataset.sourceUrl,
     };
 
     const { overviewRows, displayRows, filterRows, sourceRows } =
         summarizeGraphStatus(cy, state, staticInfo);
 
-    el.innerHTML = `
+    setRenderedHtml(el, `
       <div class="md-status md-status-compact">
         ${renderCard("Overview", [
         ["Visible organizations", overviewRows[2][1]],
@@ -180,14 +160,14 @@ export function updateGraphInfo(cy, state = {}, { statusElId = "infoStatus" } = 
         ["Node coloring", displayRows[1][1]],
     ])}
       </div>
-    `;
+    `);
 
-    modalEl.innerHTML = `
+    setRenderedHtml(modalEl, `
       <div class="md-status">
         ${renderCard("Graph overview", overviewRows)}
         ${renderCard("Display", displayRows)}
         ${renderCard("Filters", filterRows)}
-        ${sourceRows.length ? renderCard("Source files", sourceRows, { linkifyValues: true }) : ""}
+        ${sourceRows.length ? renderCard("Source file", sourceRows, { linkifyValues: true }) : ""}
       </div>
-    `;
+    `);
 }

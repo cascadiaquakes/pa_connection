@@ -1,10 +1,9 @@
-import { layoutConfig } from "../config/layoutConfig.js";
 import { visualSpec } from "../config/visualSpec.js";
 import { selectNodesFromHeader } from "./selectionHighlight.js";
-import { computeGridGeometry } from "./gridGeometry.js";
+import { clearGraphSelection } from "./graphSelection.js";
 
-export function addGridDecorations(cy, cfg = layoutConfig) {
-    const { bounds, orgValues, geoValues, xBreaks, yBreaks } = computeGridGeometry(cy, cfg);
+export function addGridDecorations(cy, geometry) {
+    const { bounds, orgValues, geoValues, xBreaks, yBreaks } = geometry;
 
     // wipe old decorations
     cy.remove(cy.elements('[isGrid="true"]'));
@@ -98,7 +97,7 @@ export function addGridDecorations(cy, cfg = layoutConfig) {
 
     cy.add(els);
 
-    return { orgValues, geoValues, xBreaks, yBreaks };
+    return geometry;
 }
 
 export function initGridHeaderInteractions(cy, opts = {}) {
@@ -114,9 +113,7 @@ export function initGridHeaderInteractions(cy, opts = {}) {
         if (!axis || key == null) return;
 
         if (toggle && activeHeaderId === headerId) {
-            cy.batch(() => {
-                cy.elements(":selected").unselect();
-            });
+            clearGraphSelection(cy);
             activeHeaderId = null;
             return;
         }

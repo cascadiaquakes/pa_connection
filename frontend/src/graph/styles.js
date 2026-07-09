@@ -1,3 +1,16 @@
+import { visualSpec } from "../config/visualSpec.js";
+
+function nodeShapeStyles() {
+    const spec = visualSpec.nodeShapes;
+
+    return Object.entries(spec.shapes ?? {})
+        .filter(([value]) => value !== "Other")
+        .map(([value, shape]) => ({
+            selector: `node[!isGrid][nodeTypePrimary = "${value}"], node[!isGrid][nodeType = "${value}"]`,
+            style: { shape },
+        }));
+}
+
 export function baseStylesheet() {
     return [
         {
@@ -23,28 +36,11 @@ export function baseStylesheet() {
                 "transition-duration": "150ms",
             },
         },
-        {
-            selector: 'node[!isGrid][nodeTypePrimary = "Organization"], node[!isGrid][nodeType = "Organization"]',
-            style: {
-                shape: "round-rectangle",
-            },
-        },
-        {
-            selector: 'node[!isGrid][nodeTypePrimary = "Hub"], node[!isGrid][nodeType = "Hub"]',
-            style: {
-                shape: "hexagon",
-            },
-        },
-        {
-            selector: 'node[!isGrid][nodeTypePrimary = "Program"], node[!isGrid][nodeType = "Program"]',
-            style: {
-                shape: "diamond",
-            },
-        },
+        ...nodeShapeStyles(),
         {
             selector: "node[!isGrid][!nodeTypePrimary][!nodeType]",
             style: {
-                shape: "ellipse",
+                shape: visualSpec.nodeShapes.fallbackShape,
                 width: 32,
                 height: 32,
             },

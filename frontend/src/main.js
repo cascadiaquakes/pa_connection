@@ -1,15 +1,22 @@
 import "./style.css";
 
 import { loadGraphData } from "./data/dataloader.js";
+import { publicAssetUrl } from "./data/publicAssets.js";
 import {
     createGraph,
     runLayout,
     applyView
 } from "./graph/graphBuilder.js";
-import {initControls, NODE_SELECTION_SPECS} from "./ui/controls.js";
+import {initControls} from "./ui/controls.js";
+import { NODE_SELECTION_SPECS } from "./config/nodeDimensions.js";
+import {
+    graphViewState,
+    hasActiveSelectionFilters,
+    nodeSelectionState,
+    planAppStateUpdate,
+} from "./config/appState.js";
 import {initSidebarTabs} from "./ui/tabs.js";
-import {applyBoxPresetLayout} from "./graph/boxLayout.js";
-import {addGridDecorations, updateGridHeaderColors, initGridHeaderInteractions} from "./graph/gridDecorations.js";
+import {updateGridHeaderColors, initGridHeaderInteractions} from "./graph/gridDecorations.js";
 import {initGraphInfo, updateGraphInfo} from "./info/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {applySelectionBuckets, initSelectionHighlight} from "./graph/selectionHighlight.js";
@@ -19,32 +26,64 @@ import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
 import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
 import { initSidebarResize } from "./ui/sidebarResize.js";
-import { updateNodeColorLegend } from "./ui/colorLegend.js";
+import { updateNodeColorLegend, updateNodeShapeLegend } from "./ui/colorLegend.js";
 import { initInfoModal } from "./ui/infoModal.js";
-
-function hasActiveSelectionFilters(selectionState) {
-    return Object.values(selectionState).some((value) => value instanceof Set && value.size > 0);
-}
 
 function showFatal(err) {
     console.error(err);
     const el = document.createElement("pre");
-    el.style.padding = "12px";
-    el.style.whiteSpace = "pre-wrap";
+    el.className = "fatal-error";
     el.textContent = `FATAL:\n${err?.stack || err}`;
     document.body.prepend(el);
 }
 
+function applyAppState(cy, state, controls, previousState = null) {
+    const { nodeColorMode, edgeDisplayMode, layoutMode } = state;
+    const update = planAppStateUpdate(previousState, state);
+
+    if (update.viewChanged) {
+        applyView(cy, graphViewState(state));
+    }
+    if (update.viewChanged || update.nodeColorChanged) {
+        setNodeColorData(cy, nodeColorMode);
+    }
+    if (update.viewChanged) {
+        setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
+    }
+
+    if (update.viewChanged || update.selectionChanged) {
+        const selectionState = nodeSelectionState(state);
+        const selectedNodes = applySelectionBuckets(cy, NODE_SELECTION_SPECS, selectionState);
+        controls?.setSelectionWarning({
+            hasActiveSelectionFilters: hasActiveSelectionFilters(selectionState),
+            matchCount: selectedNodes.length,
+        });
+    }
+
+    if (update.requiresLayout) {
+        runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
+    }
+    if (update.requiresLayout || update.nodeColorChanged) {
+        updateGridHeaderColors(cy, nodeColorMode);
+    }
+    if (update.nodeColorChanged) {
+        updateNodeColorLegend(cy, nodeColorMode);
+    }
+    if (update.viewChanged) {
+        updateNodeShapeLegend(cy);
+    }
+    updateGraphInfo(cy, state);
+
+    return update;
+}
+
 (async function main() {
     try {
-        const base = import.meta.env.BASE_URL || "/";
+        // Files live in public/data and are resolved relative to the served index.html.
+        const graphUrl = publicAssetUrl("data/graph.json");
+        console.log("[main] data URL:", graphUrl);
 
-        // Files live in: public/data/*  => served as: <BASE_URL>/data/*
-        const graphUrl = `${base}data/graph.json`;
-        const nodesUrl = `${base}data/organizations_clean.csv`;
-        const edgesUrl = `${base}data/edges_clean.csv`;
-
-        const loaded = await loadGraphData({ graphUrl, nodesUrl, edgesUrl, allowCsvFallback: true });
+        const loaded = await loadGraphData({ graphUrl });
         const nodes = loaded?.nodes ?? [];
         const edges = loaded?.edges ?? [];
         const diagnostics = loaded?.diagnostics ?? null;
@@ -54,7 +93,7 @@ function showFatal(err) {
             edges: edges.length,
             diagnostics,
             source: loaded?.source,
-            sourceUrls: loaded?.sourceUrls,
+            sourceUrl: loaded?.sourceUrl,
         });
 
         const rawElements = [...nodes, ...edges];
@@ -75,16 +114,13 @@ function showFatal(err) {
 
         cy.on("mouseover", 'node[isGrid != "true"]', showTooltip);
         cy.on("mouseout", 'node[isGrid != "true"]', hideTooltip);
-        addGridDecorations(cy);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
-        applyBoxPresetLayout(cy);
         const sidebarTabs = initSidebarTabs({defaultTab: "controls"});
         initInfoModal();
         initGraphInfo({
             totalNodes: nodes.length,
             totalEdges: edges.length,
-            nodesUrl: loaded?.sourceUrls?.graphUrl || loaded?.sourceUrls?.nodesUrl || "",
-            edgesUrl: loaded?.sourceUrls?.edgesUrl || "",
+            sourceUrl: loaded?.sourceUrl || "",
         });
         initSelectionInfo(cy);
         initSelectionHighlight(cy);
@@ -93,68 +129,12 @@ function showFatal(err) {
         });
         initSearchTab(cy);
         initExportTab(cy);
-        updateNodeColorLegend(cy, "orgCat");
+        let previousState = null;
         let controls;
         controls = initControls(cy, {
             onChange: (state) => {
-                const {
-                    nodeColorMode,
-                    edgeDisplayMode,
-                    allowedOrgCategories,
-                    allowedGeos,
-                    allowedNodeTypes,
-                    allowedGovernanceLevels,
-                    allowedFunctionalDomains,
-                    allowedRoles,
-                    allowedLifelines,
-                    selectedOrgCategories,
-                    selectedGeos,
-                    selectedNodeTypes,
-                    selectedGovernanceLevels,
-                    selectedFunctionalDomains,
-                    selectedRoles,
-                    selectedLifelines,
-                    selectedOrganizations,
-                    allowedRelTypes,
-                    prune,
-                    layoutMode
-                } = state;
-
-                setNodeColorData(cy, nodeColorMode);
-                applyView(cy, {
-                    allowedOrgCategories,
-                    allowedGeos,
-                    allowedNodeTypes,
-                    allowedGovernanceLevels,
-                    allowedFunctionalDomains,
-                    allowedRoles,
-                    allowedLifelines,
-                    allowedRelTypes,
-                    prune,
-                    nodeColorMode,
-                    edgeDisplayMode,
-                    layoutMode
-                });
-                setEdgeColorData(cy, edgeDisplayMode === "detailed" ? "relType" : "none");
-                const selectionState = {
-                    selectedOrgCategories,
-                    selectedGeos,
-                    selectedNodeTypes,
-                    selectedGovernanceLevels,
-                    selectedFunctionalDomains,
-                    selectedRoles,
-                    selectedLifelines,
-                    selectedOrganizations,
-                };
-                const selectedNodes = applySelectionBuckets(cy, NODE_SELECTION_SPECS, selectionState);
-                controls?.setSelectionWarning({
-                    hasActiveSelectionFilters: hasActiveSelectionFilters(selectionState),
-                    matchCount: selectedNodes.length,
-                });
-                runLayout(cy, layoutMode === "organic" ? "organic" : "boxes");
-                updateGridHeaderColors(cy, nodeColorMode);
-                updateNodeColorLegend(cy, nodeColorMode);
-                updateGraphInfo(cy, state);
+                applyAppState(cy, state, controls, previousState);
+                previousState = state;
             },
         });
         document.getElementById("btnResetControls")?.addEventListener("click", () => {

@@ -1,16 +1,19 @@
 import tippy from "tippy.js";
 import "tippy.js/dist/tippy.css";
+import { createElement } from "../ui/dom.js";
 
 function buildTooltipContent(node) {
     const d = node.data();
 
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <div class="cy-tooltip">
-            <div><strong>${d.orgName ?? "(no label)"}</strong></div>
-        </div>
-    `;
-    return div;
+    return createElement(document, "div", {}, [
+        createElement(document, "div", { className: "cy-tooltip" }, [
+            createElement(document, "div", {}, [
+                createElement(document, "strong", {
+                    text: d.orgName ?? "(no label)",
+                }),
+            ]),
+        ]),
+    ]);
 }
 
 function createTooltip(node) {
