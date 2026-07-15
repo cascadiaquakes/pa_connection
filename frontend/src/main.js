@@ -27,7 +27,7 @@ import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
 import { initSidebarResize } from "./ui/sidebarResize.js";
 import { updateNodeColorLegend, updateNodeShapeLegend } from "./ui/colorLegend.js";
-import { initInfoModal } from "./ui/infoModal.js";
+import { initAboutModal, initInfoModal } from "./ui/infoModal.js";
 
 function showFatal(err) {
     console.error(err);
@@ -116,6 +116,7 @@ function applyAppState(cy, state, controls, previousState = null) {
         cy.on("mouseout", 'node[isGrid != "true"]', hideTooltip);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         const sidebarTabs = initSidebarTabs({defaultTab: "controls"});
+        initAboutModal();
         initInfoModal();
         initGraphInfo({
             totalNodes: nodes.length,

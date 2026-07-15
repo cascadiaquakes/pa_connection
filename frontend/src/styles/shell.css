@@ -59,13 +59,39 @@
 }
 
 .app-header-meta {
-    justify-self: end;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.82);
     white-space: nowrap;
+}
+
+.app-header-actions {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.app-header-about {
+    padding: 6px 10px;
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.app-header-about:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.app-header-about:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.75);
+    outline-offset: 2px;
 }
 
 #app {
@@ -218,9 +244,18 @@ body.is-resizing {
         white-space: normal;
     }
 
-    .app-header-meta {
+    .app-header-actions {
         justify-self: center;
+        gap: 10px;
+    }
+
+    .app-header-meta {
         font-size: 11px;
+    }
+
+    .app-header-about {
+        font-size: 11px;
+        padding: 5px 9px;
     }
 
     .brand-logos {

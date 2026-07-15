@@ -97,6 +97,29 @@
     margin-top: 12px;
 }
 
+.about-modal-dialog {
+    inset: 12vh 18vw;
+}
+
+.about-modal-body .about-panel {
+    max-width: 760px;
+}
+
+.about-panel h3 {
+    margin: 0 0 10px;
+}
+
+.about-panel p {
+    margin: 0 0 12px;
+    color: #263238;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.about-panel p:last-child {
+    margin-bottom: 0;
+}
+
 @media (max-width: 900px) {
     .info-modal-dialog {
         inset: 0;
