@@ -38,7 +38,10 @@
             </a>
         </div>
         <div class="app-header-title">P&amp;A Connections Viewer</div>
-        <div class="app-header-meta" aria-label="Release status">Prototype version 4</div>
+        <div class="app-header-actions">
+            <button id="btnAbout" type="button" class="app-header-about">About</button>
+            <div class="app-header-meta" aria-label="Release status">Prototype version 4</div>
+        </div>
     </header>
 
     <div id="app">
@@ -270,6 +273,49 @@
         <main class="main">
             <div id="cy" class="cy"></div>
         </main>
+    </div>
+</div>
+
+<div id="aboutModal" class="info-modal" hidden>
+    <div id="aboutModalBackdrop" class="info-modal-backdrop"></div>
+    <div
+            class="info-modal-dialog about-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="aboutModalTitle"
+    >
+        <div class="info-modal-header">
+            <div>
+                <div class="info-modal-eyebrow">About</div>
+                <h2 id="aboutModalTitle">P&amp;A Connections Viewer</h2>
+            </div>
+            <button id="btnAboutModalClose" type="button" class="button-secondary">Close</button>
+        </div>
+        <div class="info-modal-body about-modal-body">
+            <section class="panel about-panel">
+                <h3>What this tool is for</h3>
+                <p>
+                    This viewer is an interactive map of organizations and relationships in the P&amp;A
+                    network. It is intended to help users explore how agencies, partners, roles, and
+                    connections relate to each other, filter the graph for specific questions, and export
+                    views for discussion or analysis.
+                </p>
+                <p>
+                    The tool is a prototype for exploration and sensemaking. It should be used as a
+                    reference aid alongside source materials and local knowledge, not as a formal system
+                    of record.
+                </p>
+            </section>
+            <section class="panel about-panel">
+                <h3>About the data</h3>
+                <p>
+                    The dataset is made from public information gathered by our team. Because public
+                    information can change, check the last edit date for each organization or relationship
+                    to understand how recently that item was reviewed and whether newer information may
+                    need to be confirmed.
+                </p>
+            </section>
+        </div>
     </div>
 </div>
 

@@ -111,7 +111,7 @@ export function gridDecorationStyles() {
                 height: "data(_h)",
 
                 label: "data(label)",
-                "font-size": 11,
+                "font-size": 15,
 
                 "text-wrap": "wrap",
                 "text-max-width": "data(_w)",
@@ -134,7 +134,7 @@ export function gridDecorationStyles() {
         {
             selector: 'node[isGridHeader][gridAxis="col"]',
             style: {
-                "font-size": 10,
+                "font-size": 15,
                 "text-wrap": "wrap",
             },
         },
