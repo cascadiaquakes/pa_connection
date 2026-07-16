@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { loadGraphData } from "./data/dataloader.js";
+import { loadGraphData, loadMenuDefinitions } from "./data/dataloader.js";
 import { publicAssetUrl } from "./data/publicAssets.js";
 import {
     createGraph,
@@ -26,7 +26,11 @@ import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
 import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
 import { initSidebarResize } from "./ui/sidebarResize.js";
-import { updateNodeColorLegend, updateNodeShapeLegend } from "./ui/colorLegend.js";
+import {
+    updateEdgeColorLegend,
+    updateNodeColorLegend,
+    updateNodeShapeLegend,
+} from "./ui/colorLegend.js";
 import { initAboutModal, initInfoModal } from "./ui/infoModal.js";
 
 function showFatal(err) {
@@ -70,6 +74,9 @@ function applyAppState(cy, state, controls, previousState = null) {
         updateNodeColorLegend(cy, nodeColorMode);
     }
     if (update.viewChanged) {
+        updateEdgeColorLegend(cy, edgeDisplayMode);
+    }
+    if (update.viewChanged) {
         updateNodeShapeLegend(cy);
     }
     updateGraphInfo(cy, state);
@@ -81,9 +88,13 @@ function applyAppState(cy, state, controls, previousState = null) {
     try {
         // Files live in public/data and are resolved relative to the served index.html.
         const graphUrl = publicAssetUrl("data/graph.json");
+        const menuDefinitionsUrl = publicAssetUrl("data/menuDefinitions.json");
         console.log("[main] data URL:", graphUrl);
 
-        const loaded = await loadGraphData({ graphUrl });
+        const [loaded, menuDefinitions] = await Promise.all([
+            loadGraphData({ graphUrl }),
+            loadMenuDefinitions({ definitionsUrl: menuDefinitionsUrl }),
+        ]);
         const nodes = loaded?.nodes ?? [];
         const edges = loaded?.edges ?? [];
         const diagnostics = loaded?.diagnostics ?? null;
@@ -133,6 +144,7 @@ function applyAppState(cy, state, controls, previousState = null) {
         let previousState = null;
         let controls;
         controls = initControls(cy, {
+            menuDefinitions,
             onChange: (state) => {
                 applyAppState(cy, state, controls, previousState);
                 previousState = state;
