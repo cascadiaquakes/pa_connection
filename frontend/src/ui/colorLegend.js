@@ -178,3 +178,46 @@ export function updateNodeShapeLegend(cy, { legendElId = "nodeShapeLegend" } = {
 
     el.hidden = false;
 }
+
+export function updateEdgeColorLegend(
+    cy,
+    edgeDisplayMode,
+    { legendElId = "edgeColorLegend" } = {}
+) {
+    const el = document.getElementById(legendElId);
+    if (!el) return;
+
+    if (edgeDisplayMode !== "detailed") {
+        el.hidden = true;
+        clearElement(el);
+        return;
+    }
+
+    const spec = visualSpec.edges?.relType;
+    if (!spec) {
+        el.hidden = true;
+        clearElement(el);
+        return;
+    }
+
+    const observedValues = new Set();
+    cy.edges("[!isGrid]").forEach((edge) => {
+        const value = String(edge.data(spec.dataKey) ?? "").trim();
+        if (value) observedValues.add(value);
+    });
+    const values = orderedLegendValues(spec, Array.from(observedValues));
+
+    if (values.length === 0) {
+        el.hidden = true;
+        clearElement(el);
+        return;
+    }
+
+    renderColorLegend(el, {
+        title: spec.title ?? "Edge Color",
+        values,
+        colors: spec.colors ?? {},
+    });
+
+    el.hidden = false;
+}
