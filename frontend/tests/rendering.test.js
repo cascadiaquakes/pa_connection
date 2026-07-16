@@ -109,11 +109,23 @@ test("search results are constructed as DOM nodes and retain literal text", () =
             subtitle: `Notes: <script>alert(1)</script>`,
         }],
         "alpha",
-        (id) => selected.push(id)
+        {
+            onSelect: (id) => selected.push(id),
+            onToggleHighlight: (id, checked) => selected.push(`${id}:${checked}`),
+            selectedIds: new Set([`node-"1"`]),
+        }
     );
 
     assert.equal(container.children.length, 1);
-    const item = container.children[0];
+    const row = container.children[0];
+    assert.equal(row.tagName, "div");
+    assert.equal(row.dataset.id, `node-"1"`);
+
+    const checkbox = row.children[0];
+    const item = row.children[1];
+    assert.equal(checkbox.tagName, "input");
+    assert.equal(checkbox.attributes.type, "checkbox");
+    assert.equal(checkbox.checked, true);
     assert.equal(item.tagName, "button");
     assert.equal(item.dataset.id, `node-"1"`);
     assert.equal(item.attributes.type, "button");
@@ -121,8 +133,10 @@ test("search results are constructed as DOM nodes and retain literal text", () =
     assert.equal(item.children[0].children[1].textContent, "Alpha");
     assert.equal(item.children[1].children[0].textContent, "Notes: <script>alert(1)</script>");
 
+    checkbox.checked = false;
+    checkbox.listeners.change();
     item.listeners.click();
-    assert.deepEqual(selected, [`node-"1"`]);
+    assert.deepEqual(selected, [`node-"1":false`, `node-"1"`]);
 });
 
 test("legend rendering keeps category labels as literal DOM text", () => {

@@ -398,6 +398,7 @@ export function initControls(cy, { onChange, menuDefinitions = {} }) {
     );
     const orgNameById = new Map();
     const orgNameByNormalizedName = new Map();
+    const orgIdByNormalizedName = new Map();
     Array.from(cy.nodes("[!isGrid]")).forEach((node) => {
         const data = getNodeData(node);
         const orgName = String(data?.orgName ?? "").trim();
@@ -405,6 +406,7 @@ export function initControls(cy, { onChange, menuDefinitions = {} }) {
         if (!orgName) return;
         orgNameByNormalizedName.set(normalizeLookupValue(orgName), orgName);
         if (orgId) orgNameById.set(normalizeLookupValue(orgId), orgName);
+        if (orgId) orgIdByNormalizedName.set(normalizeLookupValue(orgName), orgId);
     });
 
     let workshopOrganizationNamesPromise = null;
@@ -530,6 +532,7 @@ export function initControls(cy, { onChange, menuDefinitions = {} }) {
         updateVisibleOrganizationSelection(state);
         state = collectState();
         onChange(state);
+        document.dispatchEvent(new CustomEvent("organizationSelectionChanged"));
     };
 
     for (const [, spec] of filterContainers.entries()) {
@@ -603,11 +606,66 @@ export function initControls(cy, { onChange, menuDefinitions = {} }) {
         emit();
     }
 
+    function selectedOrganizationNames() {
+        if (!visibleOrganizationSpec?.el) return new Set();
+        return selectedFromChecklist(visibleOrganizationSpec.el);
+    }
+
+    function selectedOrganizationIds() {
+        return new Set(
+            Array.from(selectedOrganizationNames())
+                .map((name) => orgIdByNormalizedName.get(normalizeLookupValue(name)))
+                .filter(Boolean)
+        );
+    }
+
+    function setSelectedOrganizationsByIds(ids, { checked = true, replace = false } = {}) {
+        if (!visibleOrganizationSpec?.el) return;
+
+        const names = new Set(
+            Array.from(ids ?? [])
+                .map((id) => orgNameById.get(normalizeLookupValue(id)))
+                .filter(Boolean)
+        );
+        if (names.size === 0) return;
+
+        const updateBoxes = () => {
+            const boxes = Array.from(
+                visibleOrganizationSpec.el.querySelectorAll('input[type="checkbox"]')
+            );
+            if (replace) {
+                boxes.forEach((box) => {
+                    box.checked = false;
+                });
+            }
+
+            const availableNames = new Set(boxes.map((box) => box.value));
+            const missingNames = Array.from(names).filter((name) => !availableNames.has(name));
+            if (missingNames.length > 0) return false;
+
+            boxes.forEach((box) => {
+                if (names.has(box.value)) {
+                    box.checked = checked;
+                }
+            });
+            return true;
+        };
+
+        if (!updateBoxes()) {
+            resetToFullView();
+            updateBoxes();
+        }
+
+        emit();
+    }
+
     emit();
 
     return {
         emit,
+        getSelectedOrganizationIds: selectedOrganizationIds,
         resetToFullView,
+        setSelectedOrganizationsByIds,
         setSelectionWarning({ hasActiveSelectionFilters = false, matchCount = 0 } = {}) {
             if (!selectionWarningEl) return;
             selectionWarningEl.hidden = !hasActiveSelectionFilters || matchCount > 0;

@@ -139,7 +139,6 @@ function applyAppState(cy, state, controls, previousState = null) {
         cy.on("tap", 'node[isGrid != "true"], edge', () => {
             sidebarTabs.activate("info");
         });
-        initSearchTab(cy);
         initExportTab(cy);
         let previousState = null;
         let controls;
@@ -157,6 +156,7 @@ function applyAppState(cy, state, controls, previousState = null) {
             controls.resetToFullView();
         });
         cy.scratch("_controls", controls);
+        initSearchTab(cy);
     } catch (e) {
         showFatal(e);
     }
