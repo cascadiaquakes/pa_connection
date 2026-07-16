@@ -110,3 +110,20 @@ export async function loadGraphData({ graphUrl = "/data/graph.json" } = {}) {
         L.groupEnd();
     }
 }
+
+export async function loadMenuDefinitions({
+    definitionsUrl = "/data/menuDefinitions.json",
+} = {}) {
+    L.group("loadMenuDefinitions");
+    L.log("Params:", { definitionsUrl });
+
+    try {
+        const definitions = await fetchJson(definitionsUrl);
+        if (!definitions || typeof definitions !== "object" || Array.isArray(definitions)) {
+            throw new Error(`Menu definitions payload must be a JSON object at ${definitionsUrl}.`);
+        }
+        return definitions;
+    } finally {
+        L.groupEnd();
+    }
+}

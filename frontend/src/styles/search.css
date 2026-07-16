@@ -13,9 +13,33 @@
     margin-top: 10px;
 }
 
+.search-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
 .search-results {
     max-height: 400px;
     overflow-y: auto;
+}
+
+.search-result-row {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+    border-radius: 6px;
+}
+
+.search-result-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.search-result-checkbox {
+    width: 16px;
+    height: 16px;
+    margin: 10px 0 0 2px;
 }
 
 .search-item {
@@ -31,7 +55,7 @@
 }
 
 .search-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: transparent;
 }
 
 .search-title {

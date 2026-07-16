@@ -66,6 +66,88 @@ function getNodeData(node) {
     return typeof node.data === "function" ? node.data() : node.data;
 }
 
+function definitionKeyForSpec(spec) {
+    if (spec.visibleOnly) return "allOrganizations";
+    return spec.visualKey ?? null;
+}
+
+function createDefinitionInfo(spec, values, menuDefinitions) {
+    const definition = menuDefinitions?.[definitionKeyForSpec(spec)];
+    if (!definition) return null;
+
+    const visibleValues = new Set(values);
+    const categories = Object.entries(definition.categories ?? {})
+        .filter(([name]) => visibleValues.size === 0 || visibleValues.has(name))
+        .map(([name, text]) => ({ name, text }));
+
+    return {
+        title: definition.title ?? spec.title,
+        definition: definition.definition,
+        categories,
+    };
+}
+
+function createInfoButton(documentRef, info) {
+    if (!info?.definition) return null;
+
+    const wrapper = documentRef.createElement("span");
+    wrapper.className = "definition-popover";
+
+    const button = documentRef.createElement("button");
+    button.type = "button";
+    button.className = "definition-popover-button";
+    button.textContent = "i";
+    button.setAttribute("aria-label", `${info.title} definition`);
+    button.setAttribute("aria-expanded", "false");
+    button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const open = wrapper.classList.toggle("is-open");
+        button.setAttribute("aria-expanded", String(open));
+    });
+
+    const panel = documentRef.createElement("span");
+    panel.className = "definition-popover-panel";
+    panel.setAttribute("role", "tooltip");
+
+    const title = documentRef.createElement("strong");
+    title.className = "definition-popover-title";
+    title.textContent = info.title;
+
+    const body = documentRef.createElement("span");
+    body.className = "definition-popover-body";
+    body.textContent = info.definition;
+
+    panel.appendChild(title);
+    panel.appendChild(body);
+
+    if (info.categories?.length) {
+        const list = documentRef.createElement("dl");
+        list.className = "definition-popover-list";
+
+        for (const category of info.categories) {
+            const term = documentRef.createElement("dt");
+            term.textContent = category.name;
+
+            const description = documentRef.createElement("dd");
+            description.textContent = category.text;
+
+            list.appendChild(term);
+            list.appendChild(description);
+        }
+
+        panel.appendChild(list);
+    }
+
+    wrapper.addEventListener("mouseleave", () => {
+        wrapper.classList.remove("is-open");
+        button.setAttribute("aria-expanded", "false");
+    });
+    wrapper.appendChild(button);
+    wrapper.appendChild(panel);
+    return wrapper;
+}
+
 function firstRowValue(row, keys) {
     for (const key of keys) {
         const value = String(row[key] ?? "").trim();
@@ -87,6 +169,7 @@ function renderChecklist(
         previewExpanded = false,
         checkedValues = null,
         extraActions = [],
+        definitionInfo = null,
     } = {}
 ) {
     container.replaceChildren();
@@ -127,11 +210,14 @@ function renderChecklist(
         titleEl.className = "filter-accordion-title";
         titleEl.textContent = title;
 
+        const infoButton = createInfoButton(document, definitionInfo);
+
         const chevron = document.createElement("span");
         chevron.className = "filter-accordion-chevron";
         chevron.setAttribute("aria-hidden", "true");
 
         summary.appendChild(titleEl);
+        if (infoButton) summary.appendChild(infoButton);
         summary.appendChild(chevron);
         listParent.appendChild(summary);
         container.appendChild(listParent);
@@ -253,7 +339,7 @@ function createSelectionWarning(selectionContainers) {
     return warning;
 }
 
-export function initControls(cy, { onChange }) {
+export function initControls(cy, { onChange, menuDefinitions = {} }) {
     const nodeColorModeEl = document.getElementById("nodeColorMode");
     const edgeDisplayModeEl = document.getElementById("edgeDisplayMode");
 
@@ -312,6 +398,7 @@ export function initControls(cy, { onChange }) {
     );
     const orgNameById = new Map();
     const orgNameByNormalizedName = new Map();
+    const orgIdByNormalizedName = new Map();
     Array.from(cy.nodes("[!isGrid]")).forEach((node) => {
         const data = getNodeData(node);
         const orgName = String(data?.orgName ?? "").trim();
@@ -319,6 +406,7 @@ export function initControls(cy, { onChange }) {
         if (!orgName) return;
         orgNameByNormalizedName.set(normalizeLookupValue(orgName), orgName);
         if (orgId) orgNameById.set(normalizeLookupValue(orgId), orgName);
+        if (orgId) orgIdByNormalizedName.set(normalizeLookupValue(orgName), orgId);
     });
 
     let workshopOrganizationNamesPromise = null;
@@ -435,6 +523,7 @@ export function initControls(cy, { onChange }) {
             previewExpanded: visibleOrganizationSpec.el.dataset.previewExpanded === "true",
             checkedValues: selectedVisible,
             extraActions: [createWorkshopButton()],
+            definitionInfo: createDefinitionInfo(visibleOrganizationSpec, values, menuDefinitions),
         });
     };
 
@@ -443,6 +532,7 @@ export function initControls(cy, { onChange }) {
         updateVisibleOrganizationSelection(state);
         state = collectState();
         onChange(state);
+        document.dispatchEvent(new CustomEvent("organizationSelectionChanged"));
     };
 
     for (const [, spec] of filterContainers.entries()) {
@@ -451,6 +541,11 @@ export function initControls(cy, { onChange }) {
                 collapsible: true,
                 title: spec.title,
                 defaultOpen: false,
+                definitionInfo: createDefinitionInfo(
+                    spec,
+                    nodeFilterValues[spec.stateKey] ?? [],
+                    menuDefinitions
+                ),
             });
         }
     }
@@ -463,15 +558,25 @@ export function initControls(cy, { onChange }) {
                 defaultOpen: false,
                 previewLimit: spec.previewLimit,
                 extraActions: spec.visibleOnly ? [createWorkshopButton()] : [],
+                definitionInfo: createDefinitionInfo(
+                    spec,
+                    nodeSelectionValues[spec.stateKey] ?? [],
+                    menuDefinitions
+                ),
             });
         }
     }
     if (relTypeFiltersEl) {
+        const relTypeSpec = {
+            title: "Relationship Type",
+            visualKey: "relationshipType",
+        };
         renderChecklist(relTypeFiltersEl, relTypes, emit, {
             checkedByDefault: false,
             collapsible: true,
-            title: "Relationship Type",
+            title: relTypeSpec.title,
             defaultOpen: false,
+            definitionInfo: createDefinitionInfo(relTypeSpec, relTypes, menuDefinitions),
         });
     }
 
@@ -501,11 +606,66 @@ export function initControls(cy, { onChange }) {
         emit();
     }
 
+    function selectedOrganizationNames() {
+        if (!visibleOrganizationSpec?.el) return new Set();
+        return selectedFromChecklist(visibleOrganizationSpec.el);
+    }
+
+    function selectedOrganizationIds() {
+        return new Set(
+            Array.from(selectedOrganizationNames())
+                .map((name) => orgIdByNormalizedName.get(normalizeLookupValue(name)))
+                .filter(Boolean)
+        );
+    }
+
+    function setSelectedOrganizationsByIds(ids, { checked = true, replace = false } = {}) {
+        if (!visibleOrganizationSpec?.el) return;
+
+        const names = new Set(
+            Array.from(ids ?? [])
+                .map((id) => orgNameById.get(normalizeLookupValue(id)))
+                .filter(Boolean)
+        );
+        if (names.size === 0) return;
+
+        const updateBoxes = () => {
+            const boxes = Array.from(
+                visibleOrganizationSpec.el.querySelectorAll('input[type="checkbox"]')
+            );
+            if (replace) {
+                boxes.forEach((box) => {
+                    box.checked = false;
+                });
+            }
+
+            const availableNames = new Set(boxes.map((box) => box.value));
+            const missingNames = Array.from(names).filter((name) => !availableNames.has(name));
+            if (missingNames.length > 0) return false;
+
+            boxes.forEach((box) => {
+                if (names.has(box.value)) {
+                    box.checked = checked;
+                }
+            });
+            return true;
+        };
+
+        if (!updateBoxes()) {
+            resetToFullView();
+            updateBoxes();
+        }
+
+        emit();
+    }
+
     emit();
 
     return {
         emit,
+        getSelectedOrganizationIds: selectedOrganizationIds,
         resetToFullView,
+        setSelectedOrganizationsByIds,
         setSelectionWarning({ hasActiveSelectionFilters = false, matchCount = 0 } = {}) {
             if (!selectionWarningEl) return;
             selectionWarningEl.hidden = !hasActiveSelectionFilters || matchCount > 0;

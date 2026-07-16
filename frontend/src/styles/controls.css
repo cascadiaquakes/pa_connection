@@ -52,7 +52,7 @@
 
 .filter-accordion-summary {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 16px;
+    grid-template-columns: minmax(0, 1fr) 22px 16px;
     align-items: center;
     gap: 8px;
     min-height: 42px;
@@ -72,6 +72,98 @@
     overflow-wrap: anywhere;
 }
 
+.definition-popover {
+    position: relative;
+    display: inline-flex;
+    justify-self: center;
+    align-items: center;
+}
+
+.definition-popover-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid #8aa1a8;
+    border-radius: 999px;
+    background: #fff;
+    color: #184d57;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+}
+
+.definition-popover-button:hover,
+.definition-popover-button:focus-visible {
+    border-color: #184d57;
+    background: #eef7f9;
+    outline: none;
+}
+
+.definition-popover-panel {
+    position: absolute;
+    top: 24px;
+    right: -22px;
+    z-index: 200;
+    display: none;
+    width: min(320px, calc(100vw - 48px));
+    max-height: 360px;
+    overflow: auto;
+    padding: 10px 12px;
+    border: 1px solid #cddfe3;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+    color: #202124;
+    cursor: default;
+}
+
+.definition-popover:hover .definition-popover-panel,
+.definition-popover:focus-within .definition-popover-panel,
+.definition-popover.is-open .definition-popover-panel {
+    display: block;
+}
+
+.definition-popover-title,
+.definition-popover-body,
+.definition-popover-list,
+.definition-popover-list dt,
+.definition-popover-list dd {
+    display: block;
+}
+
+.definition-popover-title {
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.definition-popover-body {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.definition-popover-list {
+    margin: 8px 0 0;
+    padding: 8px 0 0;
+    border-top: 1px solid #e7e7e7;
+}
+
+.definition-popover-list dt {
+    margin-top: 7px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.definition-popover-list dd {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
 .filter-accordion-actions {
     display: flex;
     align-items: center;
@@ -81,6 +173,7 @@
 }
 
 .filter-accordion-chevron {
+    grid-column: 3;
     width: 8px;
     height: 8px;
     border-right: 1.5px solid #555;
