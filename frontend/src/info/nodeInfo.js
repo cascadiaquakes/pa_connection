@@ -11,6 +11,20 @@ function arrayOrPrimary(d, arrayKey, primaryKey) {
     return d[primaryKey] ? [d[primaryKey]] : [];
 }
 
+function formatLastUpdated(value) {
+    if (!value) return "Not available";
+
+    const normalizedValue = String(value).trim();
+    const date = new Date(
+        /^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)
+            ? `${normalizedValue}T00:00:00`
+            : normalizedValue
+    );
+    if (Number.isNaN(date.getTime())) return "Not available";
+
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
+}
+
 function summarizeNode(n) {
     const d = n.data();
 
@@ -41,6 +55,7 @@ function summarizeNode(n) {
         ["Website", d.url],
         ["Primary contact", primaryContact],
         ["Secondary contact", d.secondary],
+        ["Last updated", formatLastUpdated(d.lastUpdated)],
         ["Review flag", d.reviewFlag],
         ["Review note", d.reviewNote],
         ["Notes", d.notes],
@@ -72,6 +87,7 @@ function summarizeNode(n) {
         "lifelineTags",
         "primary",
         "secondary",
+        "lastUpdated",
         "notes",
         "url",
         "reviewFlag",
