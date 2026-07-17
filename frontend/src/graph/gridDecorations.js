@@ -57,6 +57,7 @@ export function addGridDecorations(cy, geometry) {
                 isGrid: "true",
                 isGridHeader: "true",
                 gridAxis: "col",
+                gridDefinitionKey: "orgCat",
                 gridKey: orgValues[ix],
                 _w: colW,
                 _h: 30
@@ -84,6 +85,7 @@ export function addGridDecorations(cy, geometry) {
                 isGrid: "true",
                 isGridHeader: "true",
                 gridAxis: "row",
+                gridDefinitionKey: "geo",
                 gridKey: geoValues[iy],
                 _w: 120, // left gutter width for row labels
                 _h: rowH,
