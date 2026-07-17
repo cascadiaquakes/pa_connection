@@ -21,7 +21,12 @@ import {initGraphInfo, updateGraphInfo} from "./info/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {applySelectionBuckets, initSelectionHighlight} from "./graph/selectionHighlight.js";
 import {initSelectionInfo} from "./info/selectionInfo.js";
-import { showTooltip, hideTooltip } from "./graph/tooltips.js";
+import {
+    showTooltip,
+    hideTooltip,
+    showGridHeaderTooltip,
+    hideGridHeaderTooltip,
+} from "./graph/tooltips.js";
 import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
 import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
@@ -119,12 +124,15 @@ function applyAppState(cy, state, controls, previousState = null) {
         });
         cy.scratch("_rawElements", rawElements);
         cy.scratch("_nodeSearchIndex", buildNodeSearchIndex(rawElements));
+        cy.scratch("_menuDefinitions", menuDefinitions);
 
         //  for debug
         window.cy = cy;
 
         cy.on("mouseover", 'node[isGrid != "true"]', showTooltip);
         cy.on("mouseout", 'node[isGrid != "true"]', hideTooltip);
+        cy.on("mouseover", 'node[isGridHeader = "true"][isGrid = "true"]', showGridHeaderTooltip);
+        cy.on("mouseout", 'node[isGridHeader = "true"][isGrid = "true"]', hideGridHeaderTooltip);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         const sidebarTabs = initSidebarTabs({defaultTab: "controls"});
         initAboutModal();
