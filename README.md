@@ -58,9 +58,9 @@ npm run preprocess:data
 Default repository-relative paths:
 
 ```text
-frontend/public/data/organizations_clean.csv
-frontend/public/data/edges_clean.csv
-frontend/public/data/graph.json
+scripts/organizations_clean.csv
+scripts/edges_clean.csv
+scripts/out/graph.json
 ```
 
 `edges_clean.csv` is a required preprocessing input even though it is not required by the deployed frontend after `graph.json` has been generated.
@@ -97,9 +97,21 @@ Node fields used:
 - `orgTypes_json` or `orgTypes`
 - `orgTypePrimary`
 - `geoPrimary`
+- `nodeTypes_json` or `nodeTypes`
+- `nodeTypePrimary`
+- `governanceLevels_json` or `governanceLevels`
+- `governanceLevelPrimary`
+- `roleTags_json` or `roleTags`
+- `rolePrimary`
+- `lifelineTags_json` or `lifelineTags`
+- `femaLifelinePrimary`
 - `Notes`
 - `Primary`
 - `2ndry`
+- `url`
+- `review_flag`
+- `review_note`
+- `lastUpdated`
 
 Edge fields used:
 
@@ -126,6 +138,66 @@ node_id,name
 The legacy headers `Org ID` and `Organization Name` are also accepted.
 
 This file is optional and may be supplied only for workshop deployments. When absent, the application hides the shortcut and continues normally.
+
+## Reusing the Viewer with a New Dataset
+
+The graph engine, filtering, layouts, selection interactions, search mechanics, and export functions can be reused. The current interface is still tailored to the P&A organization network, so reuse falls into two levels.
+
+### Drop-in dataset
+
+No frontend source edits are needed when the new `graph.json` preserves the current Cytoscape payload and node/edge field contract:
+
+```json
+{
+  "elements": {
+    "nodes": [{ "data": { "id": "...", "orgName": "...", "orgTypePrimary": "...", "geoPrimary": "..." } }],
+    "edges": [{ "data": { "id": "...", "source": "...", "target": "...", "relType": "..." } }]
+  }
+}
+```
+
+All configured filter dimensions must be present for the default filters to work: organization category, node type, governance level, role, lifeline, and geography. New category values are supported: they appear in controls automatically and receive a deterministic fallback color when no explicit color is configured.
+
+The grid continues to use `orgTypePrimary` as columns and `geoPrimary` as rows. Node details continue to use organization-specific labels and fields. If those semantics still fit, replace `frontend/public/data/graph.json` and optionally `frontend/public/data/menuDefinitions.json`, then run the normal frontend tests and build.
+
+### Dataset-specific files to review
+
+For a different application using the same data structure, review these central locations before changing graph behavior:
+
+| Need | Current location | What to adapt |
+| --- | --- | --- |
+| Filter dimensions, labels, ordering, colors | `frontend/src/config/viewerConfig.js` | Dimension names, source keys, category order, color palette |
+| Node shapes and relationship colors | `frontend/src/config/viewerConfig.js` | Shape field/value mapping and relationship categories |
+| Grid axes and ordering | `frontend/src/config/viewerConfig.js` | Choose the column and row dimensions; use `layoutConfig.js` only for spacing and sizing |
+| Node details and date/contact fields | `frontend/src/config/viewerConfig.js` | Field labels, order, fallback text, and value formatting |
+| Searchable node fields | `frontend/src/config/viewerConfig.js` | Search fields, labels, and whether dimensions are included |
+| Dataset definitions shown in tooltips | `frontend/public/data/menuDefinitions.json` | Dimension and category descriptions |
+| Optional Workshop shortcut | `frontend/src/ui/controls.js` | Remove, rename, or replace its CSV-driven action |
+| Title, logos, About text, and labels | `frontend/index.html` and `frontend/public/logos/` | Deliberate manual rebranding for the new application |
+
+### Planned modularization (small, safe steps)
+
+The goal is to make a new dataset a data-and-configuration change, with all required edits collected in a small set of build-time JavaScript configuration modules. This deliberately adds no runtime configuration request or JSON parsing. Each phase should preserve the current behavior and be covered by tests before moving to the next one.
+
+1. Completed — add a single viewer configuration module with the current values as defaults. It exposes entity labels, dimensions, visual settings, grid axes, detail fields, search fields, and optional actions without changing behavior.
+2. Completed — make grid geometry, header definitions, header colors, and header selection read their axes from that configuration instead of assuming `orgCat` and `geo`.
+3. Completed — make node details and search render configured field lists, including the shared `date` formatter.
+4. Validate the result with a second fixture dataset and configuration, without changing frontend source code.
+
+The intended end state separates runtime data from build-time adaptation settings:
+
+```text
+frontend/public/data/
+  graph.json             # entities and relationships
+  menuDefinitions.json   # optional help text for dimensions and categories
+
+frontend/src/config/
+  viewerConfig.js         # field mapping, dimensions, grid, details, search, visuals
+```
+
+Until those phases are implemented, the table above is the authoritative checklist for adapting a new dataset.
+
+`viewerConfig.js` is the single source of truth for dataset behavior and presentation: dimensions, visual mappings, grid axes, detail fields, and search fields. Branding remains intentionally manual in `index.html` and the logo assets so a new application receives a deliberate visual and content review.
 
 ## Project Structure
 

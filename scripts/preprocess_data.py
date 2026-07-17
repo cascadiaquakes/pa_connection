@@ -133,6 +133,7 @@ def build_elements_from_rows(node_rows, edge_rows):
                     "url": clean(row.get("url")),
                     "reviewFlag": clean(row.get("review_flag")),
                     "reviewNote": clean(row.get("review_note")),
+                    "lastUpdated": clean(row.get("lastUpdated")),
                     "_nodeColor": palette_color(org_type_primary or geo_primary or "unknown"),
                 }
             }

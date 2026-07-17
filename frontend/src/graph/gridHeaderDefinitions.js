@@ -1,6 +1,8 @@
+import { viewerGridDimension } from "../config/viewerConfig.js";
+
 const AXIS_DEFINITION_KEYS = {
-    col: "orgCat",
-    row: "geo",
+    col: viewerGridDimension("col")?.key,
+    row: viewerGridDimension("row")?.key,
 };
 
 function clean(value) {

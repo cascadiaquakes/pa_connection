@@ -83,41 +83,44 @@ export function computeCellGridForWidth(innerW, count, cfg = {}) {
 }
 
 export function computeGridGeometry(cy, cfg = layoutConfig) {
-    const { bounds, orgTypeOrder, geoOrder } = cfg;
+    const { bounds } = cfg;
+    const columnDataKey = cfg.columnDataKey ?? "orgTypePrimary";
+    const rowDataKey = cfg.rowDataKey ?? "geoPrimary";
+    const columnOrder = cfg.columnOrder ?? cfg.orgTypeOrder ?? [];
+    const rowOrder = cfg.rowOrder ?? cfg.geoOrder ?? [];
     const nodes = getLayoutNodes(cy);
 
-    const observedOrg = [];
-    const observedGeo = [];
+    const observedColumns = [];
+    const observedRows = [];
 
     nodes.forEach((n) => {
-        observedOrg.push(String(n.data("orgTypePrimary") ?? "Unknown"));
-        observedGeo.push(String(n.data("geoPrimary") ?? "Unknown"));
+        observedColumns.push(String(n.data(columnDataKey) ?? "Unknown"));
+        observedRows.push(String(n.data(rowDataKey) ?? "Unknown"));
     });
 
-    const orgValues = orderObservedOnly(orgTypeOrder, new Set(observedOrg));
-    const geoValues = orderObservedOnly(geoOrder, new Set(observedGeo));
+    const columnValues = orderObservedOnly(columnOrder, new Set(observedColumns));
+    const rowValues = orderObservedOnly(rowOrder, new Set(observedRows));
 
-    const orgW = computeWeightsFromNodes(nodes, orgValues, (n) => n.data("orgTypePrimary"));
-    const geoW = computeWeightsFromNodes(nodes, geoValues, (n) => n.data("geoPrimary"));
+    const columnWeights = computeWeightsFromNodes(nodes, columnValues, (n) => n.data(columnDataKey));
 
-    const xBreaks = toBreaks(orgValues, orgW, bounds.x0, bounds.x1, cfg.minColFrac ?? 0.05);
-    const xIndex = new Map(orgValues.map((v, i) => [v, i]));
-    const yIndex = new Map(geoValues.map((v, i) => [v, i]));
+    const xBreaks = toBreaks(columnValues, columnWeights, bounds.x0, bounds.x1, cfg.minColFrac ?? 0.05);
+    const xIndex = new Map(columnValues.map((v, i) => [v, i]));
+    const yIndex = new Map(rowValues.map((v, i) => [v, i]));
 
     const cellCounts = new Map();
     nodes.forEach((n) => {
-        const orgType = String(n.data("orgTypePrimary") ?? "Unknown");
-        const geo = String(n.data("geoPrimary") ?? "Unknown");
-        const ix = xIndex.get(orgType) ?? 0;
-        const iy = yIndex.get(geo) ?? 0;
+        const columnValue = String(n.data(columnDataKey) ?? "Unknown");
+        const rowValue = String(n.data(rowDataKey) ?? "Unknown");
+        const ix = xIndex.get(columnValue) ?? 0;
+        const iy = yIndex.get(rowValue) ?? 0;
         const key = `${ix}::${iy}`;
         cellCounts.set(key, (cellCounts.get(key) ?? 0) + 1);
     });
 
-    const rowHeights = geoValues.map((_, iy) => {
+    const rowHeights = rowValues.map((_, iy) => {
         let required = cfg.minRowHeight ?? (cfg.nodeGrid?.targetCellH ?? 52) + 2 * (cfg.cellPadding?.y ?? 2);
 
-        for (let ix = 0; ix < orgValues.length; ix++) {
+        for (let ix = 0; ix < columnValues.length; ix++) {
             const cellW = Math.max(1, xBreaks[ix + 1] - xBreaks[ix]);
             const pad = getCellPadding(cfg, cellW, Infinity);
             const innerW = Math.max(1, cellW - 2 * pad.x);
@@ -140,8 +143,8 @@ export function computeGridGeometry(cy, cfg = layoutConfig) {
     }
 
     const cells = new Map();
-    for (let iy = 0; iy < geoValues.length; iy++) {
-        for (let ix = 0; ix < orgValues.length; ix++) {
+    for (let iy = 0; iy < rowValues.length; iy++) {
+        for (let ix = 0; ix < columnValues.length; ix++) {
             const key = `${ix}::${iy}`;
             const x0 = xBreaks[ix];
             const x1 = xBreaks[ix + 1];
@@ -184,8 +187,15 @@ export function computeGridGeometry(cy, cfg = layoutConfig) {
 
     return {
         nodes,
-        orgValues,
-        geoValues,
+        columnValues,
+        rowValues,
+        // Deprecated aliases preserve the geometry contract for existing callers.
+        orgValues: columnValues,
+        geoValues: rowValues,
+        columnDataKey,
+        rowDataKey,
+        columnDimensionKey: cfg.columnDimensionKey ?? null,
+        rowDimensionKey: cfg.rowDimensionKey ?? null,
         xBreaks,
         yBreaks,
         xIndex,
