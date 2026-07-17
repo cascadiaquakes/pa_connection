@@ -5,14 +5,15 @@ import {
     renderCard,
     renderInlineAction,
 } from "./infoRender.js";
+import { viewerConfig, viewerDimension } from "../config/viewerConfig.js";
 
 function arrayOrPrimary(d, arrayKey, primaryKey) {
     if (Array.isArray(d[arrayKey])) return d[arrayKey];
     return d[primaryKey] ? [d[primaryKey]] : [];
 }
 
-function formatLastUpdated(value) {
-    if (!value) return "Not available";
+function formatDate(value, emptyValue = "") {
+    if (!value) return emptyValue;
 
     const normalizedValue = String(value).trim();
     const date = new Date(
@@ -20,46 +21,40 @@ function formatLastUpdated(value) {
             ? `${normalizedValue}T00:00:00`
             : normalizedValue
     );
-    if (Number.isNaN(date.getTime())) return "Not available";
+    if (Number.isNaN(date.getTime())) return emptyValue;
 
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
+}
+
+function detailValue(field, data, { title, shortLabel }) {
+    if (field.type === "title") return title;
+    if (field.type === "code") return shortLabel !== title ? shortLabel : "";
+
+    if (field.dimensionKey) {
+        const dimension = viewerDimension(field.dimensionKey);
+        return dimension
+            ? arrayOrPrimary(data, dimension.arrayKey, dimension.dataKey)
+            : "";
+    }
+
+    const value = data[field.key];
+    if (field.type === "date") return formatDate(value, field.empty ?? "");
+    if (String(value ?? "").trim() === "" && field.empty) return field.empty;
+    return value;
 }
 
 function summarizeNode(n) {
     const d = n.data();
 
-    const orgName = d.orgName ?? d.name ?? d.label ?? d.id ?? n.id();
-    const shortLabel = d.label ?? d.id ?? n.id();
-
-    const orgTypes = arrayOrPrimary(d, "orgTypes", "orgTypePrimary");
-    const nodeTypes = arrayOrPrimary(d, "nodeTypes", "nodeTypePrimary");
-    const geographies = arrayOrPrimary(d, "geoTags", "geoPrimary");
-    const governanceLevels = arrayOrPrimary(d, "governanceLevels", "governanceLevelPrimary");
-    const roles = arrayOrPrimary(d, "roleTags", "rolePrimary");
-    const lifelines = arrayOrPrimary(d, "lifelineTags", "femaLifelinePrimary");
-
-    const primaryContact =
-        d.primary && String(d.primary).trim().length > 0
-            ? d.primary
-            : "No contact listed";
-
-    const detailsRows = [
-        ["Organization", orgName],
-        ["Code", shortLabel !== orgName ? shortLabel : ""],
-        ["Node type", nodeTypes],
-        ["Organization types", orgTypes],
-        ["Geography", geographies],
-        ["Governance level", governanceLevels],
-        ["Roles", roles],
-        ["FEMA lifelines", lifelines],
-        ["Website", d.url],
-        ["Primary contact", primaryContact],
-        ["Secondary contact", d.secondary],
-        ["Last updated", formatLastUpdated(d.lastUpdated)],
-        ["Review flag", d.reviewFlag],
-        ["Review note", d.reviewNote],
-        ["Notes", d.notes],
-    ];
+    const titleKey = viewerConfig.data.nodeTitleKey;
+    const idKey = viewerConfig.data.nodeIdKey;
+    const title = d[titleKey] ?? d.name ?? d.label ?? d[idKey] ?? n.id();
+    const shortLabel = d.label ?? d[idKey] ?? n.id();
+    const detailsConfig = viewerConfig.details.node;
+    const detailsRows = detailsConfig.fields.map((field) => [
+        field.label,
+        detailValue(field, d, { title, shortLabel }),
+    ]);
 
     const skip = new Set([
         "_nodeColor",
@@ -67,31 +62,14 @@ function summarizeNode(n) {
         "isGridPoint",
         "isGridLine",
         "isGridHeader",
-        "id",
+        idKey,
         "label",
         "name",
-        "orgName",
-        "geoPrimary",
-        "geoTags",
-        "orgTypePrimary",
-        "orgTypes",
-        "nodeTypePrimary",
-        "nodeTypes",
-        "governanceLevelPrimary",
-        "governanceLevels",
+        titleKey,
         "functionalDomainPrimary",
         "functionalDomains",
-        "rolePrimary",
-        "roleTags",
-        "femaLifelinePrimary",
-        "lifelineTags",
-        "primary",
-        "secondary",
-        "lastUpdated",
-        "notes",
-        "url",
-        "reviewFlag",
-        "reviewNote",
+        ...viewerConfig.dimensions.flatMap(({ dataKey, arrayKey }) => [dataKey, arrayKey]),
+        ...detailsConfig.fields.map(({ key }) => key).filter(Boolean),
     ]);
 
     const extraRows = Object.keys(d)
@@ -104,7 +82,7 @@ function summarizeNode(n) {
 }
 
 function renderNodeJump(targetNode) {
-    const label = targetNode.data("orgName") ?? targetNode.data("label") ?? targetNode.id();
+    const label = targetNode.data(viewerConfig.data.nodeTitleKey) ?? targetNode.data("label") ?? targetNode.id();
     return {
         html: renderInlineAction(
             label,
@@ -146,7 +124,7 @@ function directionalConnectionsForNode(n) {
                 return;
             }
 
-            const relType = data.relType ?? data.type ?? "(unknown)";
+            const relType = data[viewerConfig.data.edgeTypeKey] ?? data.type ?? "(unknown)";
             if (sourceId === nodeId && targetId === other.id()) {
                 outgoing.push([renderNodeJump(other), [relType]]);
             } else {
@@ -194,7 +172,7 @@ export function renderNodeSummary(n) {
 
     return `
     <div class="md-status md-status-compact">
-      ${renderCard("Organization", detailsRows.slice(0, 5))}
+      ${renderCard(viewerConfig.details.node.cardTitle, detailsRows.slice(0, viewerConfig.details.node.summaryFieldCount))}
     </div>
   `;
 }
@@ -205,7 +183,7 @@ export function renderNodeInfo(n) {
 
     return `
     <div class="md-status">
-      ${renderCard("Organization", detailsRows, { linkifyValues: true })}
+      ${renderCard(viewerConfig.details.node.cardTitle, detailsRows, { linkifyValues: true })}
       ${renderConnectionSection("Outgoing relationships", outgoing)}
       ${renderConnectionSection("Incoming relationships", incoming)}
       ${extraRows.length ? renderCard("Other attributes", extraRows, { linkifyValues: true }) : ""}

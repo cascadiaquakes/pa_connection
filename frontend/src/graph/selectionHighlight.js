@@ -2,6 +2,7 @@ import {
     clearGraphSelection,
     replaceGraphSelection,
 } from "./graphSelection.js";
+import { viewerGridDimension } from "../config/viewerConfig.js";
 
 export function initSelectionHighlight(cy) {
     const clear = () => {
@@ -97,15 +98,16 @@ export function applySelectionBuckets(cy, selectionSpecs = [], selectionState = 
  * Return visible, non-grid nodes belonging to a row/column bucket.
  *
  * axis:
- *   - "col" => match node.data("orgTypePrimary")
- *   - "row" => match node.data("geoPrimary")
+ *   - "col" => match the configured column dimension
+ *   - "row" => match the configured row dimension
  */
 export function getVisibleNodesForHeader(cy, { axis, key }) {
     return cy.nodes("[!isGrid]").filter((n) => {
         if (n.style("display") === "none") return false;
 
-        if (axis === "col") return String(n.data("orgTypePrimary") ?? "Unknown") === String(key);
-        if (axis === "row") return String(n.data("geoPrimary") ?? "Unknown") === String(key);
+        const dimension = viewerGridDimension(axis);
+        if (!dimension) return false;
+        return String(n.data(dimension.dataKey) ?? "Unknown") === String(key);
 
         return false;
     });

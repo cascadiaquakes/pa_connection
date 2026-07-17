@@ -23,6 +23,8 @@ export function applyBoxPresetLayout(
         yIndex,
         cells,
         bounds,
+        columnDataKey,
+        rowDataKey,
     } = geometry;
 
     cy.batch(() => {
@@ -30,10 +32,10 @@ export function applyBoxPresetLayout(
         const cellMap = new Map(); // key -> array of nodes
 
         nodes.forEach((n) => {
-            const orgType = String(n.data("orgTypePrimary") ?? "Unknown");
-            const geo = String(n.data("geoPrimary") ?? "Unknown");
-            const ix = xIndex.get(orgType) ?? 0;
-            const iy = yIndex.get(geo) ?? 0;
+            const columnValue = String(n.data(columnDataKey ?? "orgTypePrimary") ?? "Unknown");
+            const rowValue = String(n.data(rowDataKey ?? "geoPrimary") ?? "Unknown");
+            const ix = xIndex.get(columnValue) ?? 0;
+            const iy = yIndex.get(rowValue) ?? 0;
             const key = `${ix}::${iy}`;
             if (!cellMap.has(key)) cellMap.set(key, []);
             cellMap.get(key).push(n);

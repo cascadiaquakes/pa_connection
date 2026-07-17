@@ -1,9 +1,20 @@
 import { visualSpec } from "../config/visualSpec.js";
+import { viewerGridDimension } from "../config/viewerConfig.js";
 import { selectNodesFromHeader } from "./selectionHighlight.js";
 import { clearGraphSelection } from "./graphSelection.js";
 
 export function addGridDecorations(cy, geometry) {
-    const { bounds, orgValues, geoValues, xBreaks, yBreaks } = geometry;
+    const {
+        bounds,
+        columnValues = geometry.orgValues,
+        rowValues = geometry.geoValues,
+        columnDimensionKey,
+        rowDimensionKey,
+        xBreaks,
+        yBreaks,
+    } = geometry;
+    const columnDefinitionKey = columnDimensionKey ?? viewerGridDimension("col")?.key ?? "";
+    const rowDefinitionKey = rowDimensionKey ?? viewerGridDimension("row")?.key ?? "";
 
     // wipe old decorations
     cy.remove(cy.elements('[isGrid="true"]'));
@@ -42,7 +53,7 @@ export function addGridDecorations(cy, geometry) {
     }
 
     // column headers
-    for (let ix = 0; ix < orgValues.length; ix++) {
+    for (let ix = 0; ix < columnValues.length; ix++) {
         const x0 = xBreaks[ix];
         const x1 = xBreaks[ix + 1];
         const x = (x0 + x1) / 2;
@@ -53,12 +64,12 @@ export function addGridDecorations(cy, geometry) {
         els.push({
             data: {
                 id: `grid_col_${ix}`,
-                label: orgValues[ix],
+                label: columnValues[ix],
                 isGrid: "true",
                 isGridHeader: "true",
                 gridAxis: "col",
-                gridDefinitionKey: "orgCat",
-                gridKey: orgValues[ix],
+                gridDefinitionKey: columnDefinitionKey,
+                gridKey: columnValues[ix],
                 _w: colW,
                 _h: 30
             },
@@ -70,7 +81,7 @@ export function addGridDecorations(cy, geometry) {
     }
 
     // row headers
-    for (let iy = 0; iy < geoValues.length; iy++) {
+    for (let iy = 0; iy < rowValues.length; iy++) {
         const y0 = yBreaks[iy];
         const y1 = yBreaks[iy + 1];
         const y = (y0 + y1) / 2;
@@ -81,12 +92,12 @@ export function addGridDecorations(cy, geometry) {
         els.push({
             data: {
                 id: `grid_row_${iy}`,
-                label: geoValues[iy],
+                label: rowValues[iy],
                 isGrid: "true",
                 isGridHeader: "true",
                 gridAxis: "row",
-                gridDefinitionKey: "geo",
-                gridKey: geoValues[iy],
+                gridDefinitionKey: rowDefinitionKey,
+                gridKey: rowValues[iy],
                 _w: 120, // left gutter width for row labels
                 _h: rowH,
             },
@@ -168,8 +179,8 @@ export function updateGridHeaderColors(cy, nodeColorMode) {
     }
 
     let targetAxis = null;
-    if (spec.dataKey === "orgTypePrimary") targetAxis = "col";
-    if (spec.dataKey === "geoPrimary") targetAxis = "row";
+    if (spec.dataKey === viewerGridDimension("col")?.dataKey) targetAxis = "col";
+    if (spec.dataKey === viewerGridDimension("row")?.dataKey) targetAxis = "row";
     if (!targetAxis) return;
 
     const colors = spec.colors ?? {};
