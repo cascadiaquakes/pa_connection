@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "preprocess:data": "python ../scripts/preprocess_data.py",
+    "generate:menu-definitions": "python ../scripts/generate_menu_definitions.py",
     "test": "node --test tests/*.test.js",
     "dev": "vite",
     "build": "vite build",

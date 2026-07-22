@@ -55,6 +55,18 @@ cd frontend
 npm run preprocess:data
 ```
 
+Generate `menuDefinitions.json` from the definition worksheets in the source
+workbook:
+
+```bash
+cd frontend
+npm run generate:menu-definitions
+```
+
+The generator uses the `name` and `definition` columns from the six configured
+definition tabs. Use `python scripts/generate_menu_definitions.py --help` to
+provide another workbook or output path.
+
 Default repository-relative paths:
 
 ```text
