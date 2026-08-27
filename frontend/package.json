@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "export:excel": "python ../scripts/export_excel_to_csv.py",
     "preprocess:data": "python ../scripts/preprocess_data.py",
+    "generate:menu-definitions": "python ../scripts/generate_menu_definitions.py",
     "test": "node --test tests/*.test.js",
     "dev": "vite",
     "build": "vite build",

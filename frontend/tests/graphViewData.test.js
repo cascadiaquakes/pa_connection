@@ -17,8 +17,6 @@ function node(id, overrides = {}) {
             governanceLevelPrimary: "State",
             roleTags: ["Coordination"],
             rolePrimary: "Coordination",
-            lifelineTags: ["Communications"],
-            femaLifelinePrimary: "Communications",
             ...overrides,
         },
     };
@@ -35,7 +33,6 @@ function fullFilterState(overrides = {}) {
         allowedNodeTypes: new Set(["Organization"]),
         allowedGovernanceLevels: new Set(["State", "Local"]),
         allowedRoles: new Set(["Coordination", "Emergency Response"]),
-        allowedLifelines: new Set(["Communications", "Safety Security"]),
         allowedRelTypes: new Set(["data", "funding"]),
         prune: false,
         edgeDisplayMode: "detailed",
@@ -54,8 +51,6 @@ const nodes = [
         governanceLevelPrimary: "Local",
         roleTags: ["Emergency Response"],
         rolePrimary: "Emergency Response",
-        lifelineTags: ["Safety Security"],
-        femaLifelinePrimary: "Safety Security",
     }),
     node("isolated"),
 ];
