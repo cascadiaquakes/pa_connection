@@ -35,11 +35,6 @@ MENU_SHEETS = {
         "title": "Role",
         "definition": "Roles an organization can serve in the network.",
     },
-    "lifeline definitions": {
-        "key": "lifeline",
-        "title": "FEMA Lifeline",
-        "definition": "The FEMA community lifeline area connected to the entity or role.",
-    },
     "geographic_scale definitions": {
         "key": "geo",
         "title": "Geographic Area",

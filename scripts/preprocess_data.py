@@ -107,7 +107,6 @@ def build_elements_from_rows(node_rows, edge_rows):
         node_types = parse_json_array_field(row, "nodeTypes")
         governance_levels = parse_json_array_field(row, "governanceLevels")
         role_tags = parse_json_array_field(row, "roleTags")
-        lifeline_tags = parse_json_array_field(row, "lifelineTags")
 
         nodes.append(
             {
@@ -125,8 +124,6 @@ def build_elements_from_rows(node_rows, edge_rows):
                     "governanceLevels": governance_levels,
                     "rolePrimary": clean(row.get("rolePrimary")),
                     "roleTags": role_tags,
-                    "femaLifelinePrimary": clean(row.get("femaLifelinePrimary")),
-                    "lifelineTags": lifeline_tags,
                     "notes": clean(row.get("Notes")),
                     "primary": clean(row.get("Primary")),
                     "secondary": clean(row.get("2ndry")),
@@ -215,8 +212,8 @@ def main():
         parser.error("expected at most three positional paths: nodes, edges, output")
 
     default_paths = [
-        "./scripts/organizations_clean.csv",
-        "./scripts/edges_clean.csv",
+        "./scripts/out/organizations_clean.csv",
+        "./scripts/out/edges_clean.csv",
         "./scripts/out/graph.json",
     ]
     positional_paths = [*args.paths, *default_paths[len(args.paths):]]

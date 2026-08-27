@@ -6,7 +6,7 @@ Interactive network visualization for organizations and relationships in the P&A
 
 - Loads a preprocessed graph from `frontend/public/data/graph.json`.
 - Displays detailed or aggregated relationships.
-- Filters and highlights organizations by category, geography, governance, role, lifeline, and other attributes.
+- Filters and highlights organizations by category, geography, governance, role, and other attributes.
 - Supports grid and force-directed layouts.
 - Provides selection details, graph statistics, search, and JSON export.
 - Optionally provides a workshop selection shortcut when `workshop_selection.csv` is deployed.
@@ -48,6 +48,20 @@ frontend/public/data/graph.json
 
 CSV files are preprocessing inputs only. The browser does not convert node and edge CSV files at runtime.
 
+Export both CSV inputs from the `master` and `Relationships` workbook tabs:
+
+```bash
+cd frontend
+npm run export:excel
+```
+
+This writes `scripts/out/organizations_clean.csv` and
+`scripts/out/edges_clean.csv`. Detailed cleaning diagnostics are saved to
+`scripts/out/export_excel_report.json`, including category normalizations,
+removed duplicate edges, invalid endpoints, and organizations without relationships.
+Use `python scripts/export_excel_to_csv.py --help` for alternate workbook,
+worksheet, or output paths. FEMA Lifeline columns are intentionally ignored.
+
 Generate `graph.json` from the default CSV inputs:
 
 ```bash
@@ -63,15 +77,15 @@ cd frontend
 npm run generate:menu-definitions
 ```
 
-The generator uses the `name` and `definition` columns from the six configured
+The generator uses the `name` and `definition` columns from the five configured
 definition tabs. Use `python scripts/generate_menu_definitions.py --help` to
 provide another workbook or output path.
 
 Default repository-relative paths:
 
 ```text
-scripts/organizations_clean.csv
-scripts/edges_clean.csv
+scripts/out/organizations_clean.csv
+scripts/out/edges_clean.csv
 scripts/out/graph.json
 ```
 
@@ -115,8 +129,6 @@ Node fields used:
 - `governanceLevelPrimary`
 - `roleTags_json` or `roleTags`
 - `rolePrimary`
-- `lifelineTags_json` or `lifelineTags`
-- `femaLifelinePrimary`
 - `Notes`
 - `Primary`
 - `2ndry`
@@ -168,7 +180,7 @@ No frontend source edits are needed when the new `graph.json` preserves the curr
 }
 ```
 
-All configured filter dimensions must be present for the default filters to work: organization category, node type, governance level, role, lifeline, and geography. New category values are supported: they appear in controls automatically and receive a deterministic fallback color when no explicit color is configured.
+All configured filter dimensions must be present for the default filters to work: organization category, node type, governance level, role, and geography. New category values are supported: they appear in controls automatically and receive a deterministic fallback color when no explicit color is configured.
 
 The grid continues to use `orgTypePrimary` as columns and `geoPrimary` as rows. Node details continue to use organization-specific labels and fields. If those semantics still fit, replace `frontend/public/data/graph.json` and optionally `frontend/public/data/menuDefinitions.json`, then run the normal frontend tests and build.
 
