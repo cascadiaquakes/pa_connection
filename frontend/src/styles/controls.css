@@ -51,6 +51,7 @@
 }
 
 .filter-accordion-summary {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 22px 16px;
     align-items: center;
@@ -73,7 +74,7 @@
 }
 
 .definition-popover {
-    position: relative;
+    position: static;
     display: inline-flex;
     justify-self: center;
     align-items: center;
@@ -105,11 +106,12 @@
 
 .definition-popover-panel {
     position: absolute;
-    top: 24px;
-    right: -22px;
+    top: calc(100% - 9px);
+    right: -11px;
+    left: -11px;
     z-index: 200;
     display: none;
-    width: min(320px, calc(100vw - 48px));
+    width: auto;
     max-height: 360px;
     overflow: auto;
     padding: 10px 12px;
