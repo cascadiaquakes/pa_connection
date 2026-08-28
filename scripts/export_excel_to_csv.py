@@ -79,7 +79,9 @@ def split_categories(value):
     if not value:
         return ["Other"]
     categories = []
-    for part in re.split(r"\s*[,;/|]\s*", value):
+    # Master-sheet multi-value fields are comma-separated. Slashes are part of
+    # valid definition labels such as "Academic / Education".
+    for part in re.split(r"\s*,\s*", value):
         label = pretty_label(part)
         if label not in categories:
             categories.append(label)
