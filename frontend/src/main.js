@@ -91,6 +91,9 @@ function applyAppState(cy, state, controls, previousState = null) {
 
 (async function main() {
     try {
+        const aboutModal = initAboutModal();
+        aboutModal.open();
+
         // Files live in public/data and are resolved relative to the served index.html.
         const graphUrl = publicAssetUrl("data/graph.json");
         const menuDefinitionsUrl = publicAssetUrl("data/menuDefinitions.json");
@@ -135,7 +138,6 @@ function applyAppState(cy, state, controls, previousState = null) {
         cy.on("mouseout", 'node[isGridHeader = "true"][isGrid = "true"]', hideGridHeaderTooltip);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         const sidebarTabs = initSidebarTabs({defaultTab: "controls"});
-        initAboutModal();
         initInfoModal();
         initGraphInfo({
             totalNodes: nodes.length,
