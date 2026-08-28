@@ -120,6 +120,27 @@
     margin-bottom: 0;
 }
 
+.about-panel ul {
+    margin: 0;
+    padding-left: 22px;
+    color: #263238;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.about-panel li + li {
+    margin-top: 8px;
+}
+
+.about-panel a {
+    color: #075985;
+    overflow-wrap: anywhere;
+}
+
+.about-panel a:hover {
+    text-decoration-thickness: 2px;
+}
+
 @media (max-width: 900px) {
     .info-modal-dialog {
         inset: 0;
