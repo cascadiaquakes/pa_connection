@@ -22,8 +22,8 @@ export const viewerConfig = {
             filterLogKey: "orgCats", selectionLogKey: "selectionOrgCats",
             filterStatus: { label: "Organization categories", singular: "category" },
             search: { key: "orgTypes", label: "Organization type", order: 30 },
-            order: ["Tribal/First Nations", "Government", "Quasi-Governmental", "Coordination Structures", "Academic / Education", "Nonprofit / Community", "Private Sector", "Media", "Other"],
-            colors: { "Academic / Education": "#4E79A7", "Coordination Structures": "#F28E2B", "Government": "#E15759", "Media": "#76B7B2", "Nonprofit / Community": "#59A14F", "Private Sector": "#EDC948", "Quasi-Governmental": "#B07AA1", "Tribal/First Nations": "#9C755F", "Other": "#9E9E9E" },
+            order: ["Tribal/First Nations", "Government", "Quasi-Governmental", "Coordination Structures", "Academic/Education", "Nonprofit/Community", "Private Sector", "Media", "Other"],
+            colors: { "Academic/Education": "#4E79A7", "Coordination Structures": "#F28E2B", "Government": "#E15759", "Media": "#76B7B2", "Nonprofit/Community": "#59A14F", "Private Sector": "#EDC948", "Quasi-Governmental": "#B07AA1", "Tribal/First Nations": "#9C755F", "Other": "#9E9E9E" },
             fallbackColor: "#9E9E9E",
         },
         {
@@ -33,8 +33,8 @@ export const viewerConfig = {
             filterLogKey: "nodeTypes", selectionLogKey: "selectionNodeTypes",
             filterStatus: { label: "Node types", singular: "type" },
             search: { key: "nodeTypes", label: "Node type", order: 20 },
-            order: ["Hub", "Organization", "Program", "Tribe", "Other"],
-            colors: { "Hub": "#E15759", "Organization": "#4E79A7", "Program": "#F28E2B", "Tribe": "#59A14F", "Other": "#9E9E9E" },
+            order: ["Hub", "Organization", "Program", "Tribe/First Nation", "Other"],
+            colors: { "Hub": "#E15759", "Organization": "#4E79A7", "Program": "#F28E2B", "Tribe/First Nation": "#59A14F", "Other": "#9E9E9E" },
             fallbackColor: "#9E9E9E",
         },
         {
@@ -44,8 +44,8 @@ export const viewerConfig = {
             filterLogKey: "governanceLevels", selectionLogKey: "selectionGovernanceLevels",
             filterStatus: { label: "Governance levels", singular: "level" },
             search: { key: "governanceLevels", label: "Governance", order: 50 },
-            order: ["Federal", "State", "Local", "Multi", "Non Governmental", "Private", "Sovereign", "Other"],
-            colors: { "Federal": "#4E79A7", "State": "#F28E2B", "Local": "#E15759", "Multi": "#76B7B2", "Non Governmental": "#EDC948", "Private": "#59A14F", "Sovereign": "#9C755F", "Other": "#9E9E9E" },
+            order: ["Federal", "State", "Local", "Multi", "Non Governmental", "Private", "Sovereign", "Tribe/First Nation", "Other"],
+            colors: { "Federal": "#4E79A7", "State": "#F28E2B", "Local": "#E15759", "Multi": "#76B7B2", "Non Governmental": "#EDC948", "Private": "#59A14F", "Sovereign": "#9C755F", "Tribe/First Nation": "#AF7AA1", "Other": "#9E9E9E" },
             fallbackColor: "#9E9E9E",
         },
         {
@@ -75,7 +75,7 @@ export const viewerConfig = {
         allNodes: { containerId: "selectionOrganizationFilters", title: "All Organizations", stateKey: "selectedOrganizations", logKey: "selectionOrganizations", primaryKey: "orgName", previewLimit: 5, visibleOnly: true },
     },
     visuals: {
-        nodeShapes: { dataKey: "nodeTypePrimary", fallbackShape: "ellipse", shapes: { "Hub": "hexagon", "Organization": "round-rectangle", "Program": "diamond", "Tribe": "ellipse", "Other": "ellipse" }, title: "Node Shape" },
+        nodeShapes: { dataKey: "nodeTypePrimary", fallbackShape: "ellipse", shapes: { "Hub": "hexagon", "Organization": "round-rectangle", "Program": "diamond", "Tribe/First Nation": "ellipse", "Other": "ellipse" }, title: "Node Shape" },
         edges: {
             relType: {
                 dataKey: "relType", title: "Relationship Type",
