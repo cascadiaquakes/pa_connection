@@ -24,6 +24,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: prod
     # Safety gate: must type 'deploy' to confirm
     if: github.event.inputs.confirm == 'deploy'
 
