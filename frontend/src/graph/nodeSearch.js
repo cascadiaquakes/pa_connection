@@ -1,4 +1,4 @@
-import { NODE_DIMENSIONS } from "../config/nodeDimensions.js";
+import { viewerConfig } from "../config/viewerConfig.js";
 
 function normalizeText(v) {
     return String(v ?? "").trim().toLowerCase();
@@ -38,7 +38,7 @@ function makeSnippet(text, query, radius = 28) {
     return snippet;
 }
 
-const DIMENSION_SEARCH_FIELDS = NODE_DIMENSIONS
+const DIMENSION_SEARCH_FIELDS = viewerConfig.dimensions
     .filter((dimension) => dimension.search)
     .sort((a, b) => a.search.order - b.search.order)
     .map((dimension) => ({
@@ -49,32 +49,26 @@ const DIMENSION_SEARCH_FIELDS = NODE_DIMENSIONS
     }));
 
 const NODE_SEARCH_FIELDS = [
-    { key: "orgName", label: "Name" },
-    { key: "id", label: "ID" },
-    ...DIMENSION_SEARCH_FIELDS,
-    { key: "notes", label: "Notes" },
-    { key: "url", label: "Website" },
-    { key: "primary", label: "Primary contact" },
-    { key: "secondary", label: "Secondary contact" },
-    { key: "reviewFlag", label: "Review flag" },
-    { key: "reviewNote", label: "Review note" },
+    ...viewerConfig.search.nodeFields,
+    ...(viewerConfig.search.includeDimensions ? DIMENSION_SEARCH_FIELDS : []),
 ];
 
 export function buildNodeSearchIndex(rawElements = []) {
     return rawElements
-        .filter((el) => el?.data?.id && el?.data?.isGrid !== "true" && !el?.data?.source)
+        .filter((el) => el?.data?.[viewerConfig.data.nodeIdKey] && el?.data?.isGrid !== "true" && !el?.data?.source)
         .map((el) => {
             const d = el.data;
-            const title = d.orgName || d.id || "";
+            const title = d[viewerConfig.data.nodeTitleKey] || d[viewerConfig.data.nodeIdKey] || "";
             const sortKey = normalizeText(title);
 
             return {
-                id: d.id,
+                id: d[viewerConfig.data.nodeIdKey],
                 title,
                 sortKey,
                 fields: NODE_SEARCH_FIELDS.map((field) => ({
                     key: field.key,
                     label: field.label,
+                    title: field.title === true,
                     value: formatFieldValue(field, d[field.key]),
                 })),
             };
@@ -104,7 +98,7 @@ export function searchNodeIndex(index = [], query = "") {
                 const normalizedValue = normalizeText(field.value);
                 if (!normalizedValue.includes(q)) continue;
 
-                if (field.key === "orgName") {
+                if (field.title) {
                     nameMatched = true;
                     continue;
                 }

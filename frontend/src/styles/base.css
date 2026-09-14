@@ -42,3 +42,14 @@ button {
     padding: 12px;
     white-space: pre-wrap;
 }
+
+.cy-tooltip {
+    max-width: 320px;
+    line-height: 1.35;
+}
+
+.cy-tooltip-meta {
+    margin: 3px 0 6px;
+    color: #5b6470;
+    font-size: 12px;
+}

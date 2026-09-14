@@ -59,6 +59,19 @@ function parseCSV(text) {
     return result.data;
 }
 
+export async function workshopSelectionFileAvailable(workshopUrl) {
+    try {
+        const response = await fetch(workshopUrl, {
+            method: "HEAD",
+            cache: "no-store",
+        });
+        const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
+        return response.ok && !contentType.includes("text/html");
+    } catch {
+        return false;
+    }
+}
+
 export async function loadWorkshopSelection({
     workshopUrl = "/data/workshop_selection.csv",
 } = {}) {
@@ -106,6 +119,23 @@ export async function loadGraphData({ graphUrl = "/data/graph.json" } = {}) {
             source: "preprocessed-json",
             sourceUrl: graphUrl,
         };
+    } finally {
+        L.groupEnd();
+    }
+}
+
+export async function loadMenuDefinitions({
+    definitionsUrl = "/data/menuDefinitions.json",
+} = {}) {
+    L.group("loadMenuDefinitions");
+    L.log("Params:", { definitionsUrl });
+
+    try {
+        const definitions = await fetchJson(definitionsUrl);
+        if (!definitions || typeof definitions !== "object" || Array.isArray(definitions)) {
+            throw new Error(`Menu definitions payload must be a JSON object at ${definitionsUrl}.`);
+        }
+        return definitions;
     } finally {
         L.groupEnd();
     }

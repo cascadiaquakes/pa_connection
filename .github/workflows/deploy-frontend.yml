@@ -62,6 +62,8 @@ jobs:
             --delete \
             --cache-control "public, max-age=31536000, immutable" \
             --exclude "index.html" \
+            --exclude "data" \
+            --exclude "data/*" \
             --exclude "dev/*"
 
           # HTML files: no cache (so users always get latest)

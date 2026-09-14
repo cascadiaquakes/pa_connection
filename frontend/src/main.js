@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { loadGraphData } from "./data/dataloader.js";
+import { loadGraphData, loadMenuDefinitions } from "./data/dataloader.js";
 import { publicAssetUrl } from "./data/publicAssets.js";
 import {
     createGraph,
@@ -21,13 +21,25 @@ import {initGraphInfo, updateGraphInfo} from "./info/graphStatus.js";
 import {setEdgeColorData, setNodeColorData} from "./graph/graphColors.js";
 import {applySelectionBuckets, initSelectionHighlight} from "./graph/selectionHighlight.js";
 import {initSelectionInfo} from "./info/selectionInfo.js";
-import { showTooltip, hideTooltip } from "./graph/tooltips.js";
+import {
+    showTooltip,
+    hideTooltip,
+    showGridHeaderTooltip,
+    hideGridHeaderTooltip,
+} from "./graph/tooltips.js";
 import { buildNodeSearchIndex } from "./graph/nodeSearch.js";
 import { initSearchTab } from "./ui/searchTab.js";
 import { initExportTab } from "./ui/exportTab.js";
 import { initSidebarResize } from "./ui/sidebarResize.js";
-import { updateNodeColorLegend, updateNodeShapeLegend } from "./ui/colorLegend.js";
-import { initInfoModal } from "./ui/infoModal.js";
+import {
+    updateEdgeColorLegend,
+    updateNodeColorLegend,
+    updateNodeShapeLegend,
+} from "./ui/colorLegend.js";
+import { initAboutModal, initInfoModal } from "./ui/infoModal.js";
+import { dbg } from "./debug/logger.js";
+
+const L = dbg("main");
 
 function showFatal(err) {
     console.error(err);
@@ -70,6 +82,9 @@ function applyAppState(cy, state, controls, previousState = null) {
         updateNodeColorLegend(cy, nodeColorMode);
     }
     if (update.viewChanged) {
+        updateEdgeColorLegend(cy, edgeDisplayMode);
+    }
+    if (update.viewChanged) {
         updateNodeShapeLegend(cy);
     }
     updateGraphInfo(cy, state);
@@ -79,16 +94,23 @@ function applyAppState(cy, state, controls, previousState = null) {
 
 (async function main() {
     try {
+        const aboutModal = initAboutModal();
+        aboutModal.open();
+
         // Files live in public/data and are resolved relative to the served index.html.
         const graphUrl = publicAssetUrl("data/graph.json");
-        console.log("[main] data URL:", graphUrl);
+        const menuDefinitionsUrl = publicAssetUrl("data/menuDefinitions.json");
+        L.log("data URL:", graphUrl);
 
-        const loaded = await loadGraphData({ graphUrl });
+        const [loaded, menuDefinitions] = await Promise.all([
+            loadGraphData({ graphUrl }),
+            loadMenuDefinitions({ definitionsUrl: menuDefinitionsUrl }),
+        ]);
         const nodes = loaded?.nodes ?? [];
         const edges = loaded?.edges ?? [];
         const diagnostics = loaded?.diagnostics ?? null;
 
-        console.log("[main] elements:", {
+        L.log("elements:", {
             nodes: nodes.length,
             edges: edges.length,
             diagnostics,
@@ -108,12 +130,15 @@ function applyAppState(cy, state, controls, previousState = null) {
         });
         cy.scratch("_rawElements", rawElements);
         cy.scratch("_nodeSearchIndex", buildNodeSearchIndex(rawElements));
+        cy.scratch("_menuDefinitions", menuDefinitions);
 
         //  for debug
         window.cy = cy;
 
         cy.on("mouseover", 'node[isGrid != "true"]', showTooltip);
         cy.on("mouseout", 'node[isGrid != "true"]', hideTooltip);
+        cy.on("mouseover", 'node[isGridHeader = "true"][isGrid = "true"]', showGridHeaderTooltip);
+        cy.on("mouseout", 'node[isGridHeader = "true"][isGrid = "true"]', hideGridHeaderTooltip);
         initGridHeaderInteractions(cy, {fit: false, toggle: true});
         const sidebarTabs = initSidebarTabs({defaultTab: "controls"});
         initInfoModal();
@@ -127,11 +152,11 @@ function applyAppState(cy, state, controls, previousState = null) {
         cy.on("tap", 'node[isGrid != "true"], edge', () => {
             sidebarTabs.activate("info");
         });
-        initSearchTab(cy);
         initExportTab(cy);
         let previousState = null;
         let controls;
         controls = initControls(cy, {
+            menuDefinitions,
             onChange: (state) => {
                 applyAppState(cy, state, controls, previousState);
                 previousState = state;
@@ -144,6 +169,15 @@ function applyAppState(cy, state, controls, previousState = null) {
             controls.resetToFullView();
         });
         cy.scratch("_controls", controls);
+        initSearchTab(cy);
+        const fitViewButton = document.getElementById("btnFitView");
+        fitViewButton.addEventListener("click", () => {
+            const visibleElements = cy.elements(":visible");
+            if (visibleElements.empty()) return;
+            cy.stop();
+            cy.fit(visibleElements, 40);
+        });
+        fitViewButton.disabled = false;
     } catch (e) {
         showFatal(e);
     }

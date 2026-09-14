@@ -1,4 +1,5 @@
 import { NODE_DIMENSIONS } from "./nodeDimensions.js";
+import { viewerConfig } from "./viewerConfig.js";
 
 const nodeTypeDimension = NODE_DIMENSIONS.find((dimension) => dimension.key === "nodeType");
 
@@ -16,40 +17,9 @@ export const visualSpec = {
         ])
     ),
     nodeShapes: {
-        dataKey: "nodeTypePrimary",
-        fallbackShape: "ellipse",
+        ...viewerConfig.visuals.nodeShapes,
         order: nodeTypeDimension?.order ?? [],
-        shapes: {
-            Hub: "hexagon",
-            Organization: "round-rectangle",
-            Program: "diamond",
-            Tribe: "ellipse",
-            tribe: "ellipse",
-            FirstNation: "ellipse",
-            Other: "ellipse",
-        },
-        title: "Node Shape",
     },
 
-    edges: {
-        relType: {
-            dataKey: "relType",
-            title: "Relationship Type",
-            order: [
-                "funding",
-                "emergency response coordination",
-                "info/research",
-                "tools/products",
-                "data",
-            ],
-            colors: {
-                "funding": "#E15759",
-                "emergency response coordination": "#F28E2B",
-                "info/research": "#4E79A7",
-                "tools/products": "#59A14F",
-                "data": "#B07AA1",
-            },
-            fallbackColor: "#9E9E9E",
-        },
-    },
+    edges: viewerConfig.visuals.edges,
 };

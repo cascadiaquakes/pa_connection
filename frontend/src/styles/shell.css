@@ -37,6 +37,7 @@
 
 .brand-logo {
     display: block;
+    width: auto;
     object-fit: contain;
     flex: 0 0 auto;
 }
@@ -46,7 +47,7 @@
 }
 
 .brand-logo-nsf {
-    height: 54px;
+    height: 70px;
 }
 
 .app-header-title {
@@ -59,13 +60,39 @@
 }
 
 .app-header-meta {
-    justify-self: end;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.82);
     white-space: nowrap;
+}
+
+.app-header-actions {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.app-header-about {
+    padding: 6px 10px;
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.app-header-about:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.app-header-about:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.75);
+    outline-offset: 2px;
 }
 
 #app {
@@ -154,6 +181,36 @@ body.is-resizing {
     inset: 0;
 }
 
+.graph-fit-button {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 14px;
+    color: var(--app-header-bg);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+
+.graph-fit-button:hover:not(:disabled) {
+    background: #edf5f6;
+    border-color: var(--app-header-bg);
+}
+
+.graph-fit-button:focus-visible {
+    outline: 2px solid var(--app-header-bg);
+    outline-offset: 3px;
+}
+
+.graph-fit-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
 .panel {
     border: 1px solid #ededed;
     border-radius: 10px;
@@ -203,14 +260,16 @@ body.is-resizing {
 
 @media (max-width: 900px) {
     :root {
-        --app-header-height: 84px;
+        --app-header-height: 128px;
     }
 
     .app-header {
         grid-template-columns: 1fr;
+        grid-template-rows: 46px auto auto;
         justify-items: center;
-        gap: 6px;
-        padding: 10px 12px;
+        gap: 4px;
+        padding: 8px 12px;
+        box-sizing: border-box;
     }
 
     .app-header-title {
@@ -218,9 +277,18 @@ body.is-resizing {
         white-space: normal;
     }
 
-    .app-header-meta {
+    .app-header-actions {
         justify-self: center;
+        gap: 10px;
+    }
+
+    .app-header-meta {
         font-size: 11px;
+    }
+
+    .app-header-about {
+        font-size: 11px;
+        padding: 5px 9px;
     }
 
     .brand-logos {

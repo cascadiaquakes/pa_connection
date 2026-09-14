@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="application-name" content="Cascadia Connections Dashboard"/>
+    <meta name="description" content="Explore Cascadia organizations and the connections between them."/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:title" content="Cascadia Connections Dashboard"/>
+    <meta property="og:description" content="Explore Cascadia organizations and the connections between them."/>
     <link rel="icon" href="/favicon.ico">
-    <title>P&A connections</title>
+    <title>Cascadia Connections Dashboard</title>
 </head>
 <body>
 <div class="app-shell">
@@ -20,6 +25,8 @@
                 <img
                         class="brand-logo brand-logo-crescent"
                         src="/logos/Crescent_Logo.png"
+                        width="163"
+                        height="44"
                         alt="CRESCENT Cascadia Region Earthquake Science Center"
                 />
             </a>
@@ -33,12 +40,17 @@
                 <img
                         class="brand-logo brand-logo-nsf"
                         src="/logos/USNSF_Logo.png"
+                        width="121"
+                        height="70"
                         alt="U.S. National Science Foundation"
                 />
             </a>
         </div>
-        <div class="app-header-title">P&amp;A Connections Viewer</div>
-        <div class="app-header-meta" aria-label="Release status">Prototype version 4</div>
+        <div class="app-header-title">Cascadia Connections Dashboard</div>
+        <div class="app-header-actions">
+            <button id="btnAbout" type="button" class="app-header-about">About</button>
+            <div class="app-header-meta" aria-label="Release status">Prototype version 5</div>
+        </div>
     </header>
 
     <div id="app">
@@ -166,6 +178,7 @@
                                 <option value="detailed">Detailed</option>
                             </select>
                         </label>
+                        <div id="edgeColorLegend" class="color-legend" hidden></div>
                     </section>
                     <section class="panel">
                         <h4>Graph</h4>
@@ -198,6 +211,9 @@
                         </div>
                         <div id="infoSelection" class="info-preview"></div>
                     </section>
+                    <div class="tab-action-row">
+                        <a class="button-secondary info-data-link" href="https://app.smartsheet.com/b/form/019c10fa1eac7e41998f3cce9d57910d" target="_blank" rel="noreferrer">Submit/update your data</a>
+                    </div>
                     <section class="panel">
                         <h3>Graph stats</h3>
                         <div id="infoStatus" class="info-preview"></div>
@@ -253,6 +269,9 @@
                             />
                         </label>
 
+                        <div class="search-actions">
+                            <button id="btnSearchSelectAll" type="button" class="button-secondary">Select all</button>
+                        </div>
                         <div id="searchCount" class="hint search-count">0 results</div>
                         <div id="searchResults" class="search-results"></div>
                     </section>
@@ -269,7 +288,109 @@
 
         <main class="main">
             <div id="cy" class="cy"></div>
+            <button id="btnFitView" type="button" class="graph-fit-button" title="Recenter and fit the visible graph" aria-controls="cy" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"/>
+                    <rect x="8" y="8" width="8" height="8" rx="1"/>
+                </svg>
+                Fit to view
+            </button>
         </main>
+    </div>
+</div>
+
+<div id="aboutModal" class="info-modal" hidden>
+    <div id="aboutModalBackdrop" class="info-modal-backdrop"></div>
+    <div
+            class="info-modal-dialog about-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="aboutModalTitle"
+    >
+        <div class="info-modal-header">
+            <div>
+                <div class="info-modal-eyebrow">About</div>
+                <h2 id="aboutModalTitle">Cascadia Connections Dashboard</h2>
+            </div>
+            <button id="btnAboutModalClose" type="button" class="button-secondary">Close</button>
+        </div>
+        <div class="info-modal-body about-modal-body">
+            <section class="panel about-panel">
+                <h3>Welcome to the Cascadia Connections Dashboard</h3>
+                <p>
+                    This viewer is an interactive directory of entities involved in earthquake hazard research and
+                    resilience efforts related to Cascadia (i.e. the Pacific Northwest region bordered by the Cascadia
+                    Subduction Zone, extending from British Columbia through to Northern California). Through visual
+                    categorization and identification of roles of the organizations and communities involved, it is
+                    intended to help users understand the seismic resilience ecosystem, and to promote partnerships and
+                    collaborative projects.
+                </p>
+                <p>
+                    The viewer also has functionality to display relationships between organizations and is built around
+                    open-source graphing software that allows statistical network analysis based on available
+                    relationship data.
+                </p>
+            </section>
+            <section class="panel about-panel">
+                <h3>About the Viewer</h3>
+                <p>
+                    In the default view, entities are mapped by organizational category (columns) and geographic
+                    location of operation (rows). Definitions are available by hovering your cursor over the column and
+                    row headers.
+                </p>
+                <p>Menu tabs on the top left of the display include:</p>
+                <ul>
+                    <li><strong>Controls</strong> maintains a view of the whole ecosystem map, with entities highlighted
+                        or greyed out according to the checkbox parameters chosen under the “Selection” headings on the
+                        left sidebar. Color preferences and graph view settings can also be adjusted under this tab.</li>
+                    <li><strong>Filters</strong> allows entities, organizational categories, and geographic locations to
+                        be removed from or included in the main map using the checkboxes under “Node filters.”</li>
+                    <li><strong>Info</strong> provides metadata for a selected entity. Select “More” to open an expanded
+                        data window for that entity.</li>
+                    <li><strong>Export</strong> allows you to download the entire dataset as a JSON file or generate a PNG
+                        image of the current dashboard view.</li>
+                    <li><strong>Search</strong> produces a list of entities containing the chosen search term in their
+                        title or metadata.</li>
+                </ul>
+            </section>
+            <section class="panel about-panel">
+                <h3>About the Data</h3>
+                <p>
+                    Entities have been included in the dashboard based on exploratory research by CRESCENT staff into
+                    who’s who in the seismic resilience ecosystem. Initial directory metadata were populated by
+                    compiling public information provided by partners and web searches, then summarized with assistance
+                    from generative AI. Relationship data are incomplete and are included to demonstrate network
+                    analysis potential, subject to further research. All data are provisional until verified or
+                    submitted by an official representative of an entity.
+                </p>
+                <p>
+                    Except where otherwise noted, the P&amp;A Directory database compilation and original content created
+                    by CRESCENT are licensed under the
+                    <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">Creative
+                        Commons Attribution 4.0 International License</a>.
+                </p>
+                <p>
+                    Please provide or update directory information for your entity via our
+                    <a href="https://app.smartsheet.com/b/form/019c10fa1eac7e41998f3cce9d57910d" target="_blank" rel="noreferrer">data intake form</a>.
+                    Submitted data will be acknowledged in the metadata for the associated entity, including a timestamp for when information was last updated.
+                </p>
+            </section>
+            <section class="panel about-panel about-contact">
+                <h3>Software &amp; Contact</h3>
+                <p>
+                    The dashboard software is open source and available on
+                    <a href="https://github.com/cascadiaquakes/pa_connection" target="_blank" rel="noreferrer">GitHub</a>
+                    under the
+                    <a href="https://github.com/cascadiaquakes/pa_connection/blob/master/LICENSE" target="_blank" rel="noreferrer">BSD 3-Clause License</a>.
+                    To suggest an improvement or report a technical problem, please
+                    <a href="https://github.com/cascadiaquakes/pa_connection/issues" target="_blank" rel="noreferrer">open an issue on GitHub</a>.
+                </p>
+                <ul>
+                    <li>Email: <a href="mailto:cascadiaquakes@uoregon.edu">cascadiaquakes@uoregon.edu</a></li>
+                    <li>Website: <a href="https://cascadiaquakes.org/" target="_blank" rel="noreferrer">cascadiaquakes.org</a></li>
+                </ul>
+            </section>
+        </div>
     </div>
 </div>
 

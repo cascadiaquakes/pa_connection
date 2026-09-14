@@ -1,4 +1,8 @@
 import { visualSpec } from "./visualSpec.js";
+import { viewerConfig, viewerGridDimension } from "./viewerConfig.js";
+
+const columnDimension = viewerGridDimension("col");
+const rowDimension = viewerGridDimension("row");
 
 export const layoutConfig = {
     // Overall grid footprint in Cytoscape coordinates.
@@ -12,8 +16,12 @@ export const layoutConfig = {
     viewportPadding: { top: 40, left: 40 },
     initialGridZoom: 1,
 
-    orgTypeOrder: visualSpec.nodes.orgCat.order,
-    geoOrder: visualSpec.nodes.geo.order,
+    columnDimensionKey: viewerConfig.grid.columnDimensionKey,
+    rowDimensionKey: viewerConfig.grid.rowDimensionKey,
+    columnDataKey: columnDimension?.dataKey ?? "orgTypePrimary",
+    rowDataKey: rowDimension?.dataKey ?? "geoPrimary",
+    columnOrder: columnDimension?.order ?? visualSpec.nodes.orgCat.order,
+    rowOrder: rowDimension?.order ?? visualSpec.nodes.geo.order,
 
     minColFrac: 0.1,
 

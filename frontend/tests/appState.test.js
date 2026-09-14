@@ -14,8 +14,10 @@ import {
     NODE_SELECTION_SPECS,
 } from "../src/config/nodeDimensions.js";
 import { visualSpec } from "../src/config/visualSpec.js";
+import { viewerConfig } from "../src/config/viewerConfig.js";
 
 test("node configuration derives filters, selections, and visual order", () => {
+    assert.strictEqual(NODE_DIMENSIONS, viewerConfig.dimensions);
     assert.equal(NODE_FILTER_SPECS.length, NODE_DIMENSIONS.length);
     assert.equal(NODE_SELECTION_SPECS.length, NODE_DIMENSIONS.length + 1);
     assert.deepEqual(
