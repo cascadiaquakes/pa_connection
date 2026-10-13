@@ -1,6 +1,11 @@
-# P&A network visualization
+# Cascadia Connections Dashboard
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22758825.svg)](https://doi.org/10.5281/zenodo.22758825)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 
 Interactive network visualization for organizations and relationships in the P&A dataset, built with Vite and Cytoscape.js.
+
+**Live dashboard:** https://connections-dashboard.cascadiaquakes.org
 
 ## Features
 
@@ -302,3 +307,30 @@ Deployment workflows:
 
 - This is expected when `frontend/public/data/workshop_selection.csv` is absent.
 - When supplied, verify the CSV headers are `node_id` and `name`.
+
+---
+
+## How to Cite
+
+> Clifford, A., Bachelot, L., Sahakian, V., Marfo, W., Eriksen, A., Thomas, A., & Elizabeth, J. (2026). *Cascadia Connections Dashboard* (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.22758825
+
+---
+
+## License
+
+This project is licensed under the BSD 3-Clause License. See [LICENSE](LICENSE).
+
+---
+
+## Contacts
+
+- **Loïc Bachelot**, University of Oregon: [lbachelo@uoregon.edu](mailto:lbachelo@uoregon.edu)
+- **William Marfo**, University of California, Davis: [wmarfo@ucdavis.edu](mailto:wmarfo@ucdavis.edu)
+
+For bugs or feature requests, please [open an issue](https://github.com/cascadiaquakes/pa_connection/issues).
+
+---
+
+## Acknowledgments
+
+This project is supported by the National Science Foundation through the Cascadia Region Earthquake Science Center (CRESCENT), Cooperative Agreement EAR-2225286.
